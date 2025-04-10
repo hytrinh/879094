@@ -16,6 +16,35 @@
   </style>
 </head>
 <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
+
+<script>
+// Tắt F12 và chuột phải (tùy chọn)
+document.addEventListener("keydown", function (e) {
+  if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I")) {
+    e.preventDefault();
+    alert("检测到非法操作，已阻止！");
+  }
+});
+document.addEventListener("contextmenu", function (e) {
+  e.preventDefault();
+});
+
+// Bảo mật mật khẩu (SHA256) + closure
+const passwordManager = (function () {
+  const viewPasswordHash = "59c6f29d6ff7607fba77a6851124ae2cb755e3cfec3f1a5b14475ab3b015f7c2";  // zz251298
+  const editPasswordHash = "edbbf7cf3874a11f0b74cd9a179b9d30c6b5525f78f83f1d1d1797b99702d28f";  // aa879094
+
+  return {
+    checkView: function (password) {
+      return sha256(password) === viewPasswordHash;
+    },
+    checkEdit: function (password) {
+      return sha256(password) === editPasswordHash;
+    }
+  };
+})();
+</script>
 <!-- 登录界面 -->
 <div id="loginContainer">
   <h2>🔐 登录系统</h2>
@@ -75,7 +104,11 @@ const webhookURL = "https://script.google.com/macros/s/AKfycbxVE3tj4oW-g72VczwBO
 // 登录验证
 function checkViewPassword() {
   const name = document.getElementById("usernameInput").value.trim();
-  const pass = document.getElementById("viewPassword").value;
+  const viewPassword = prompt("请输入查看密码：");
+if (!passwordManager.checkView(viewPassword)) {
+  alert("密码错误，无法查看！");
+  document.body.innerHTML = ""; // Xóa hết nội dung
+}
   if (pass === viewPass) {
     currentUser = name || "匿名";
     document.getElementById("displayName").innerText = currentUser;
@@ -110,17 +143,16 @@ function sendLoginInfo(user) {
 }
 
 // 编辑权限
-function requireEditPassword() {
-  const pw = prompt("请输入编辑密码：");
-  if (pw === editPass) {
-    canEdit = true;
-    alert("编辑权限已启用");
-  } else {
-    alert("密码错误，无法编辑");
-    sendWebhook(`${currentUser} 尝试启用编辑失败`);
+function checkEditPermission() {
+  const password = prompt("请输入编辑密码：");
+  if (!passwordManager.checkEdit(password)) {
+    alert("编辑密码错误，操作被拒绝！");
+    // Gửi log về webhook nếu cần
+    sendWebhook("非法尝试修改内容");
+    return false;
   }
+  return true;
 }
-
 // 发送 webhook 记录行为
 
 // 添加一行
@@ -405,14 +437,13 @@ function searchTable() {
     row.style.display = matches ? "" : "none";
   });
 }
-window.onload = function () {
-      const savedUser = localStorage.getItem("loggedUser");
-      if (savedUser) {
-        currentUser = savedUser;
-        showMain();
-      }
-    };
-
+function sendWebhook(message) {
+  fetch("https://script.google.com/macros/s/AKfycbz3IrtQ7ZmqXXW2w19vfoRh4jhGGOp-hfmWXB_vf2X9WjsYooqfpuNGsPjGJwCSZ7S7/exec", {
+    method: "POST",
+    mode: "no-cors",
+    body: JSON.stringify({ content: message })
+  });
+}
 </script>
 
 </body>
