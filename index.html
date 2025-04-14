@@ -448,6 +448,29 @@
          showMain();
        }
      };
+     function loadData() {
+  fetch("https://script.google.com/macros/s/AKfycbzrmnOpLNcSOXshvmL44O47pIxcg0FMoZeT9R43CIbv4Tch25RqJVJxncTwaVTSdiyVIg/exec")
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.querySelector("#detailTable tbody");
+      tbody.innerHTML = ""; // Xoá bảng cũ
+
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+        row.forEach(cell => {
+          const td = document.createElement("td");
+          const input = document.createElement("input");
+          input.value = cell;
+          td.appendChild(input);
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(err => {
+      console.error("錯誤載入:", err);
+    });
+}
  
  </script>
  
