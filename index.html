@@ -3,6 +3,7 @@
  <head>
    <meta charset="UTF-8">
    <title>进度跟踪系统</title>
+   <title>Biểu đồ tròn</title>
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
    <style>
@@ -87,7 +88,7 @@
  const editPass = "aa879094"; // Mật khẩu chỉnh sửa
  let canEdit = false;         // Quyền chỉnh sửa
  let currentUser = "";        // Người dùng hiện tại
- const webhookURL = "https://script.google.com/macros/s/AKfycbw_cCSOJn8pLtg5rLYbiiogpinXnhay3QnJLorRMuVviGhHV8hGqBQ0kuRDpCKyRSyhUg/exec"; // URL webhook
+ const webhookURL = "https://script.google.com/macros/s/AKfycbzrmnOpLNcSOXshvmL44O47pIxcg0FMoZeT9R43CIbv4Tch25RqJVJxncTwaVTSdiyVIg/exec"; // URL webhook
  
  // 登录验证
  function checkViewPassword() {
@@ -268,8 +269,8 @@
    renderSummaryTable(summary);
    renderReasonTable(reasonStats); // Cập nhật bảng lý do
    drawChart(summary);  // Cập nhật biểu đồ
- }
- function renderSummaryTable(data) {
+}
+function renderSummaryTable(data) {
    let html = `<table><tr><th>范围</th><th>RWT完成</th><th>RWT未完成</th><th>MIT完成</th><th>MIT未完成</th></tr>`;
    const total = { RWT完成: 0, RWT未完成: 0, MIT完成: 0, MIT未完成: 0 };
    Object.keys(data).forEach(range => {
@@ -283,40 +284,34 @@
    html += `<tr><td><b>总计</b></td><td><b>${total.RWT完成}</b></td><td><b>${total.RWT未完成}</b></td><td><b>${total.MIT完成}</b></td><td><b>${total.MIT未完成}</b></td></tr>`;
    html += `</table>`;
    document.getElementById("summaryTable").innerHTML = html;
- }
+}
  
  function renderReasonTable(data) {
-   const statuses = ["采购中", "发包中", "执行中", "确认中"]; // Các trạng thái chưa hoàn thành mà bạn muốn phân loại
-   let html = `<table><tr><th>分类</th>${statuses.map(r => `<th>${r}</th>`).join("")}</tr>`;
-   
-   // Cập nhật số liệu lý do chưa hoàn thành cho mỗi loại đơn
-   ["RWT", "MIT"].forEach(type => {
-     html += `<tr><td>${type}</td>`;
-     statuses.forEach(status => {
-       html += `<td>${data[type][status] || 0}</td>`; // Hiển thị số lượng lý do chưa hoàn thành cho từng trạng thái
-     });
-     html += `</tr>`;
-   });
-   
-   html += `</table>`;
-   document.getElementById("reasonTable").innerHTML = html; // Cập nhật bảng lý do
- }
- function updateReasonSummary(summary, rowData) {
-   // Cập nhật lý do chưa hoàn thành vào summary
+  const statuses = ["采购中", "发包中", "执行中", "确认中"];
+  let html = `<table><tr><th>分类</th>${statuses.map(r => `<th>${r}</th>`).join("")}</tr>`;
+
+  for (const type in data) {
+    html += `<tr><td>${type}</td>${statuses.map(s => `<td>${data[type][s] || 0}</td>`).join("")}</tr>`;
+  }
+
+  html += `</table>`;
+  document.getElementById("reasonTable").innerHTML = html;
+}
+function updateReasonSummary(summary, rowData) {
    const progress = rowData['进度']; // Lấy tiến độ
    const status = rowData['状态']; // Lấy trạng thái
    const type = rowData['分类']; // RWT/MIT
- 
+
    // Nếu tiến độ không phải 100% và trạng thái không phải 已完成
    if (progress !== 100 && status !== "已完成") {
      const reason = rowData['原因']; // Lý do chưa hoàn thành
- 
+
      // Cập nhật lý do vào bảng summary
      if (!summary[type]) summary[type] = {};
      if (!summary[type][reason]) summary[type][reason] = 0;
      summary[type][reason] += 1;
    }
- }
+}
  function drawPieChart() {
      const table = document.getElementById("summaryTable");
      const rows = table.rows;
@@ -367,38 +362,38 @@
  
  // Vẽ lại biểu đồ mỗi khi bảng chi tiết thay đổi
  function drawChart(summary) {
-   const ctx = document.getElementById('pieChart').getContext('2d'); // Canvas context
+   const ctx = document.getElementById('pieChart').getContext('2d');
    const categories = Object.keys(summary);
-   
+
    // Dữ liệu biểu đồ
    const rwtCompleted = categories.map(category => summary[category].RWT["完成"]);
    const rwtNotCompleted = categories.map(category => summary[category].RWT["未完成"]);
    const mitCompleted = categories.map(category => summary[category].MIT["完成"]);
    const mitNotCompleted = categories.map(category => summary[category].MIT["未完成"]);
- 
+
    // Dữ liệu biểu đồ tròn
    const chartData = {
-     labels: categories,  // Các phạm vi
+     labels: categories,
      datasets: [{
        label: 'RWT 完成',
-       data: rwtCompleted,  // Dữ liệu hoàn thành RWT
-       backgroundColor: '#FF5733',  // Màu sắc cho RWT hoàn thành
+       data: rwtCompleted,
+       backgroundColor: '#FF5733',
      }, {
        label: 'RWT 未完成',
-       data: rwtNotCompleted,  // Dữ liệu chưa hoàn thành RWT
-       backgroundColor: '#FFBD33',  // Màu sắc cho RWT chưa hoàn thành
+       data: rwtNotCompleted,
+       backgroundColor: '#FFBD33',
      }, {
        label: 'MIT 完成',
-       data: mitCompleted,  // Dữ liệu hoàn thành MIT
-       backgroundColor: '#33FF57',  // Màu sắc cho MIT hoàn thành
+       data: mitCompleted,
+       backgroundColor: '#33FF57',
      }, {
        label: 'MIT 未完成',
-       data: mitNotCompleted,  // Dữ liệu chưa hoàn thành MIT
-       backgroundColor: '#3357FF',  // Màu sắc cho MIT chưa hoàn thành
+       data: mitNotCompleted,
+       backgroundColor: '#3357FF',
      }]
    };
- 
-   // Các tùy chỉnh biểu đồ tròn
+
+   // Tùy chỉnh biểu đồ tròn
    const chartOptions = {
      responsive: true,
      plugins: {
@@ -408,30 +403,30 @@
        tooltip: {
          callbacks: {
            label: function(tooltipItem) {
-             return `${tooltipItem.dataset.label}: ${tooltipItem.raw}%`;
+             return `${tooltipItem.dataset.label}: ${tooltipItem.raw}`;
            }
          }
        }
      }
    };
- 
+
    // Tạo biểu đồ
    new Chart(ctx, {
      type: 'pie',
      data: chartData,
      options: chartOptions
    });
- }
+  }
+    function drawPieChart() {
+      const summary = JSON.parse(localStorage.getItem("summary"));
+      if (summary) {
+        drawChart(summary);
+      } else {
+        console.log("No summary data found to draw the chart.");
+      }
+    }
  
- function drawPieChart() {
-   const summary = JSON.parse(localStorage.getItem("summary"));
-   if (summary) {
-     drawChart(summary);
-   } else {
-     console.log("No summary data found to draw the chart.");
-   }
- }
- 
+ drawPieChart();
  function searchTable() {
    const input = document.getElementById("searchInput").value.toLowerCase();
    const rows = document.querySelectorAll("#detailTable tbody tr");
@@ -448,31 +443,7 @@
          showMain();
        }
      };
-     function loadData() {
-  fetch("https://script.google.com/macros/s/AKfycbzrmnOpLNcSOXshvmL44O47pIxcg0FMoZeT9R43CIbv4Tch25RqJVJxncTwaVTSdiyVIg/exec")
-    .then(res => res.json())
-    .then(data => {
-      const tbody = document.querySelector("#detailTable tbody");
-      tbody.innerHTML = ""; // Xoá bảng cũ
-
-      data.forEach(row => {
-        const tr = document.createElement("tr");
-        row.forEach(cell => {
-          const td = document.createElement("td");
-          const input = document.createElement("input");
-          input.value = cell;
-          td.appendChild(input);
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-    })
-    .catch(err => {
-      console.error("錯誤載入:", err);
-    });
-}
  
  </script>
- 
  </body>
  </html>
