@@ -88,7 +88,7 @@
  const editPass = "aa879094"; // Mật khẩu chỉnh sửa
  let canEdit = false;         // Quyền chỉnh sửa
  let currentUser = "";        // Người dùng hiện tại
- const webhookURL = "https://script.google.com/macros/s/AKfycbzrmnOpLNcSOXshvmL44O47pIxcg0FMoZeT9R43CIbv4Tch25RqJVJxncTwaVTSdiyVIg/exec"; // URL webhook
+ const webhookURL = "https://script.google.com/macros/s/AKfycbxDOPRL00uvFxhQS2pYo8fBMAq-1dhu7Os5e51U6pkOu2KwEZoZPZdFuotyf9qXQO4gSA/exec"; // URL webhook
  
  // 登录验证
  function checkViewPassword() {
@@ -176,7 +176,7 @@
   );
 
   // Gửi dữ liệu đến Google Script
-  fetch("https://script.google.com/macros/s/AKfycbzrmnOpLNcSOXshvmL44O47pIxcg0FMoZeT9R43CIbv4Tch25RqJVJxncTwaVTSdiyVIg/exec", {
+  fetch("https://script.google.com/macros/s/AKfycbxDOPRL00uvFxhQS2pYo8fBMAq-1dhu7Os5e51U6pkOu2KwEZoZPZdFuotyf9qXQO4gSA/exec", {
     method: "POST",
     body: JSON.stringify(data),
     headers: {
