@@ -231,35 +231,38 @@
   function saveData() {
   if (!canEdit) {
     alert("请先输入编辑密码");
-    sendWebhook(`${currentUser} 尝试保存数据但无权限`); // Sửa lỗi ở đây
+    sendWebhook(`${currentUser} 尝试保存数据但无权限`);
     return;
   }
 
   const rows = Array.from(document.querySelector("#detailTable tbody").rows);
   const data = rows.map(r =>
     Array.from(r.cells).map(c => c.firstChild?.value || "")
-    localStorage.setItem("details", JSON.stringify(data));
   );
 
+  // Lưu dữ liệu vào localStorage
+  localStorage.setItem("details", JSON.stringify(data));
+
+  // Gửi dữ liệu về Google Sheets
   fetch("https://script.google.com/macros/s/AKfycbxDOPRL00uvFxhQS2pYo8fBMAq-1dhu7Os5e51U6pkOu2KwEZoZPZdFuotyf9qXQO4gSA/exec", {
-  method: "POST",
-  body: JSON.stringify(data),
-  headers: {
-    "Content-Type": "application/json",
-  }
-})
-.then(res => res.text())
-.then(response => {
-  if (response === "OK") {
-    alert("✅ 儲存成功！");
-  } else {
-    alert("⚠️ 發生錯誤：" + response);
-  }
-})
-.catch(err => {
-  console.error("錯誤:", err);
-  alert("❌ 儲存失敗，請稍後再試");
-});
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    }
+  })
+  .then(res => res.text())
+  .then(response => {
+    if (response === "OK") {
+      alert("✅ 儲存成功！");
+    } else {
+      alert("⚠️ 發生錯誤：" + response);
+    }
+  })
+  .catch(err => {
+    console.error("錯誤:", err);
+    alert("❌ 儲存失敗，請稍後再試");
+  });
 }
   function loadData() {
   const storedData = localStorage.getItem("details");
