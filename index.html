@@ -245,10 +245,10 @@
     Array.from(r.cells).map(c => c.firstChild?.value || "")
   );
 
-  // Gửi dữ liệu đến Google Script
+  // Gửi dữ liệu đến Google Script (Google Sheets)
   fetch("https://script.google.com/macros/s/AKfycbzxqN1aRvPzWnDWPyLOaDZkD3THCbWIIPqe-2G6B0zkpvkGmE959DreF1w3hq8pQMhFEg/exec", {
     method: "POST",
-    body: JSON.stringify(data),
+    body: JSON.stringify({ data: data }),
     headers: {
       "Content-Type": "application/json",
     },
@@ -275,11 +275,11 @@
     const data = JSON.parse(storedData);
     const tableBody = document.querySelector("#detailTable tbody");
 
-     // Đảm bảo bảng sạch trước khi thêm dữ liệu mới
-     tableBody.innerHTML = "";
- 
-     // Thêm dữ liệu vào bảng
-     data.forEach(rowData => {
+    // Đảm bảo bảng sạch trước khi thêm dữ liệu mới
+    tableBody.innerHTML = "";
+
+    // Thêm dữ liệu vào bảng
+    data.forEach(rowData => {
       const row = tableBody.insertRow();
       rowData.forEach(cellData => {
         const cell = row.insertCell();
@@ -395,14 +395,6 @@ window.onload = function () {
       renderReasonTable(data); // Sửa lại ở đây để truyền 'data'
     });
 };
-function saveToGoogleSheet(data) {
-  fetch("https://script.google.com/macros/s/AKfycbzxqN1aRvPzWnDWPyLOaDZkD3THCbWIIPqe-2G6B0zkpvkGmE959DreF1w3hq8pQMhFEg/exec", {
-    method: "POST",
-    body: JSON.stringify(data),
-    headers: { "Content-Type": "application/json" }
-  }).then(res => alert("已儲存成功！"));
-}
- 
  </script>
  </body>
  </html>
