@@ -238,6 +238,7 @@
   const rows = Array.from(document.querySelector("#detailTable tbody").rows);
   const data = rows.map(r =>
     Array.from(r.cells).map(c => c.firstChild?.value || "")
+    localStorage.setItem("details", JSON.stringify(data));
   );
 
   fetch("https://script.google.com/macros/s/AKfycbxDOPRL00uvFxhQS2pYo8fBMAq-1dhu7Os5e51U6pkOu2KwEZoZPZdFuotyf9qXQO4gSA/exec", {
@@ -420,6 +421,9 @@ window.onload = function () {
   .then(result => console.log(result))
   .catch(error => console.error("Error:", error));
 }
+window.onload = function () {
+  loadData(); // hoặc dùng fetch để lấy từ server nếu cần
+};
  </script>
  </body>
  </html>
