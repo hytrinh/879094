@@ -177,6 +177,7 @@
       alert("密码错误，请重新输入！");
     }
   }
+
   function sendLoginInfo(user) {
     const data = {
       user: user,
@@ -196,24 +197,57 @@
     .catch(err => console.error("❌ 登录记录发送失败:", err));
   }
 
-  // Gửi dữ liệu bảng chi tiết
-  function saveData() {
+  function requireEditPassword() {
+    const pw = prompt("请输入编辑密码：");
+    if (pw === editPass) {
+      canEdit = true;
+      alert("编辑权限已启用");
+    } else {
+      alert("密码错误，无法编辑");
+      sendWebhook(`${currentUser} 尝试启用编辑失败`);
+    }
+  }
+
+  function addRow() {
     if (!canEdit) {
       alert("请先输入编辑密码");
-      sendWebhook(`${currentUser} 尝试保存数据但无权限`);
+      sendWebhook(`${currentUser} 尝试添加行但无权限`);
       return;
     }
 
-    const rows = Array.from(document.querySelector("#detailTable tbody").rows);
-    const data = rows.map(r =>
-      Array.from(r.cells).map(c => c.firstChild?.value || "")
-    );
+    const tbody = document.querySelector("#detailTable tbody");
+    const row = tbody.insertRow();
 
-    fetch(scriptURL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: data })
-    })
+    // Thêm các ô dữ liệu
+    for (let i = 0; i < 12; i++) {
+      const cell = row.insertCell();
+      const input = document.createElement("input");
+      input.type = i === 8 ? "number" : "text"; // Kiểu ô số cho tiến độ
+      input.oninput = updateSummary;
+      cell.appendChild(input);
+    }
+  }
+
+  function saveData() {
+  if (!canEdit) {
+    alert("请先输入编辑密码");
+    sendWebhook(`${currentUser} 尝试保存数据但无权限`); // Sửa lỗi ở đây
+    return;
+  }
+
+  const rows = Array.from(document.querySelector("#detailTable tbody").rows);
+  const data = rows.map(r =>
+    Array.from(r.cells).map(c => c.firstChild?.value || "")
+  );
+
+  // Gửi dữ liệu đến Google Script
+  fetch("https://script.google.com/macros/s/AKfycbxDOPRL00uvFxhQS2pYo8fBMAq-1dhu7Os5e51U6pkOu2KwEZoZPZdFuotyf9qXQO4gSA/exec", {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    }
+  })
     .then(res => res.text())
     .then(response => {
       if (response === "OK") {
@@ -223,24 +257,21 @@
       }
     })
     .catch(err => {
-      console.error("❌ 錯誤:", err);
+      console.error("錯誤:", err);
       alert("❌ 儲存失敗，請稍後再試");
     });
-  }
-
- 
- // 加载数据
- function loadData() {
+}
+  function loadData() {
   const storedData = localStorage.getItem("details");
   if (storedData) {
     const data = JSON.parse(storedData);
     const tableBody = document.querySelector("#detailTable tbody");
 
-    // Đảm bảo bảng sạch trước khi thêm dữ liệu mới
-    tableBody.innerHTML = "";
-
-    // Thêm dữ liệu vào bảng
-    data.forEach(rowData => {
+     // Đảm bảo bảng sạch trước khi thêm dữ liệu mới
+     tableBody.innerHTML = "";
+ 
+     // Thêm dữ liệu vào bảng
+     data.forEach(rowData => {
       const row = tableBody.insertRow();
       rowData.forEach(cellData => {
         const cell = row.insertCell();
@@ -257,7 +288,18 @@
     // Có thể hiển thị thông báo nếu không có dữ liệu
   }
 }
- 
+
+
+  function searchTable() {
+    const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+    const rows = document.querySelectorAll("#detailTable tbody tr");
+
+    rows.forEach(row => {
+      const cells = row.querySelectorAll("td");
+      const match = Array.from(cells).some(cell => cell.textContent.toLowerCase().includes(searchTerm));
+      row.style.display = match ? "" : "none";
+    });
+  }
  // 更新汇总
  function updateSummary() {
   const rows = Array.from(document.querySelector("#detailTable tbody").rows);
