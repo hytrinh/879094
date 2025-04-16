@@ -161,7 +161,7 @@
   const editPass = "aa879094";
   let canEdit = false;
   let currentUser = "";
-  const webhookURL = "hhttps://script.google.com/macros/s/AKfycbyR6sl_08YFhkacdA1I-W-NFTUo_zs2k1X0RS26gE1QtxOjPhI9zm_NbXzwaJCkZScZWQ/exec";
+  const webhookURL = "https://script.google.com/macros/s/AKfycbxgafa_4zDxEPkcK98Inqse3Cu7O9MAKQQVwDPqwknrZdBqSfXshfapzg6DT1xmF-24zA/exec";
   const correctPassword = "zz251298";
 
   function checkViewPassword() {
@@ -337,7 +337,7 @@ function calculateDayCount(receiveDate) {
   return diffDays;
 }
 window.onload = function () {
-      fetch("https://script.google.com/macros/s/AKfycbyR6sl_08YFhkacdA1I-W-NFTUo_zs2k1X0RS26gE1QtxOjPhI9zm_NbXzwaJCkZScZWQ/exec")  // Thay đổi URL theo script của bạn
+      fetch("https://script.google.com/macros/s/AKfycbxgafa_4zDxEPkcK98Inqse3Cu7O9MAKQQVwDPqwknrZdBqSfXshfapzg6DT1xmF-24zA/exec")  // Thay đổi URL theo script của bạn
         .then(response => response.json())  // Giả sử dữ liệu trả về là JSON
         .then(data => {
           const tbody = document.querySelector("#detailTable tbody");
@@ -368,7 +368,7 @@ window.onload = function () {
         });
     };
     function sendDataToGoogleSheets(data) {
-  fetch("https://script.google.com/macros/s/AKfycbyR6sl_08YFhkacdA1I-W-NFTUo_zs2k1X0RS26gE1QtxOjPhI9zm_NbXzwaJCkZScZWQ/exec", {
+  fetch("https://script.google.com/macros/s/AKfycbxgafa_4zDxEPkcK98Inqse3Cu7O9MAKQQVwDPqwknrZdBqSfXshfapzg6DT1xmF-24zA/exec", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
