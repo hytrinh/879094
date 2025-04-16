@@ -162,21 +162,21 @@
   let canEdit = false;
   let currentUser = "";
   const webhookURL = "https://script.google.com/macros/s/AKfycbxgafa_4zDxEPkcK98Inqse3Cu7O9MAKQQVwDPqwknrZdBqSfXshfapzg6DT1xmF-24zA/exec";
-  const correctPassword = "zz251298";
 
   function checkViewPassword() {
-    const password = document.getElementById("viewPassword").value;
-    const username = document.getElementById("usernameInput").value.trim();
-    if (password === correctPassword) {
-      document.getElementById("loginContainer").style.display = "none";
-      document.getElementById("mainContainer").style.display = "block";
-      document.getElementById("displayName").innerText = username || "匿名";
-      loadData();
-      sendLoginInfo(username);
-    } else {
-      alert("密码错误，请重新输入！");
-    }
+  const password = document.getElementById("viewPassword").value;
+  const username = document.getElementById("usernameInput").value.trim();
+  if (password === viewPass) {
+    document.getElementById("loginContainer").style.display = "none";
+    document.getElementById("mainContainer").style.display = "block";
+    document.getElementById("displayName").innerText = username || "匿名";
+    currentUser = username || "匿名"; // gán luôn currentUser
+    loadData();
+    sendLoginInfo(username);
+  } else {
+    alert("密码错误，请重新输入！");
   }
+}
 
   function sendLoginInfo(user) {
     const data = {
