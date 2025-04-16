@@ -376,25 +376,48 @@ function calculateDayCount(receiveDate) {
   return diffDays;
 }
 window.onload = function () {
-  fetch("https://script.google.com/macros/s/AKfycbzxqN1aRvPzWnDWPyLOaDZkD3THCbWIIPqe-2G6B0zkpvkGmE959DreF1w3hq8pQMhFEg/exec")
-    .then(response => response.json())
-    .then(data => {
-      const tbody = document.querySelector("#detailTable tbody");
-      data.slice(1).forEach(row => {
-        const tr = tbody.insertRow();
-        row.forEach((val, i) => {
-          const cell = tr.insertCell();
-          const input = document.createElement("input");
-          input.type = i === 8 ? "number" : "text";
-          input.value = val || "";
-          input.oninput = updateSummary;
-          cell.appendChild(input);
+      fetch("https://script.google.com/macros/s/AKfycbzxqN1aRvPzWnDWPyLOaDZkD3THCbWIIPqe-2G6B0zkpvkGmE959DreF1w3hq8pQMhFEg/exec")  // Thay đổi URL theo script của bạn
+        .then(response => response.json())  // Giả sử dữ liệu trả về là JSON
+        .then(data => {
+          const tbody = document.querySelector("#detailTable tbody");
+
+          // Kiểm tra dữ liệu trả về có đúng định dạng hay không
+          if (Array.isArray(data) && data.length > 1) {
+            // Lặp qua từng dòng dữ liệu (bỏ qua tiêu đề)
+            data.slice(1).forEach(row => {
+              const tr = tbody.insertRow();  // Thêm dòng mới vào bảng
+              row.forEach((val, i) => {
+                const cell = tr.insertCell();  // Thêm ô vào dòng
+                const input = document.createElement("input");  // Tạo ô input
+                input.type = i === 8 ? "number" : "text";  // Nếu là cột 9 thì là số
+                input.value = val || "";  // Gán giá trị vào ô input
+                input.oninput = updateSummary;  // Cập nhật tổng hợp khi thay đổi giá trị
+                cell.appendChild(input);  // Thêm ô input vào ô bảng
+              });
+            });
+
+            updateSummary();  // Cập nhật tổng hợp sau khi dữ liệu được thêm vào
+            renderReasonTable(data);  // Hiển thị bảng lý do từ dữ liệu
+          } else {
+            console.error("Dữ liệu không hợp lệ hoặc không có");
+          }
+        })
+        .catch(error => {
+          console.error("Lỗi khi lấy dữ liệu:", error);  // Xử lý lỗi nếu có
         });
-      });
-      updateSummary();
-      renderReasonTable(data); // Sửa lại ở đây để truyền 'data'
-    });
-};
+    };
+    function sendDataToGoogleSheets(data) {
+  fetch("https://script.google.com/macros/s/AKfycbzxqN1aRvPzWnDWPyLOaDZkD3THCbWIIPqe-2G6B0zkpvkGmE959DreF1w3hq8pQMhFEg/exec", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.error("Error:", error));
+}
  </script>
  </body>
  </html>
