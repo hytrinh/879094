@@ -1,132 +1,202 @@
 <!DOCTYPE html>
- <html lang="zh">
- <head>
-   <meta charset="UTF-8">
-   <title>进度跟踪系统</title>
-   <title>Biểu đồ tròn</title>
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-   <style>
-     body { font-family: Arial; background: #f5f5f5; padding: 20px; }
-     table, th, td { border: 1px solid #ccc; border-collapse: collapse; }
-     table { width: 100%; margin-top: 10px; background: white; }
-     th, td { padding: 6px; text-align: center; }
-     .toolbar input, .toolbar button { margin-right: 5px; padding: 5px; }
-     .toolbar { margin-bottom: 10px; }
-     .hidden { display: none; }
-   </style>
- </head>
- <body>
-  <script>
-    // 禁用右键菜单
-    document.addEventListener('contextmenu', function (e) {
-      e.preventDefault();
-    });
-    
-    // 禁用 F12、Ctrl+Shift+I、Ctrl+U
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'F12' || 
-          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || 
-          (e.ctrlKey && e.key === 'U')) {
-        e.preventDefault();
-        alert("操作已被禁用！");
-        return false;
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>进度跟踪系统</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Tối ưu bảng */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    table, th, td {
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+      padding: 12px;
+      font-size: 18px;
+    }
+
+    td {
+      padding: 12px;
+      background-color: #fafafa;
+      font-size: 16px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    tr:hover {
+      background-color: #eaeaea;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    button.delete {
+      background-color: #f44336;
+    }
+
+    button.delete:hover {
+      background-color: #e53935;
+    }
+
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+
+    @media only screen and (max-width: 768px) {
+      table, th, td, input[type="text"], input[type="number"], select {
+        font-size: 14px;
       }
-    });
-    </script>
- <!-- 登录界面 -->
- <div id="loginContainer">
-   <h2>🔐 登录系统</h2>
-   <input type="text" id="usernameInput" placeholder="输入姓名 (可自定义)">
-   <input type="password" id="viewPassword" placeholder="查看密码">
-   <button onclick="checkViewPassword()">进入系统</button>
- </div>
- <script>
- function sendWebhook(message) {
-   fetch("URL_WEBHOOK", {
-     method: "POST",
-     body: JSON.stringify({ content: message }),
-     headers: { "Content-Type": "application/json" },
-   })
-   .then(response => response.text())
-   .then(data => console.log("Webhook response:", data))
-   .catch(error => console.error("Error sending webhook:", error));
- }
-   </script>
- <!-- 主界面 -->
- <div id="mainContainer" class="hidden">
-   <div class="toolbar">
-     用户名：<span id="displayName"></span>
-     <button onclick="requireEditPassword()">启用编辑权限</button>
-     <button onclick="addRow()">➕ 添加一行</button>
-     <button onclick="saveData()">💾 保存</button>
-     <input id="searchInput" onkeyup="searchTable()" placeholder="🔍 搜索...">
-   </div>
- 
-   <table id="detailTable">
-     <thead>
-       <tr>
-         <th>单号</th><th>内容</th><th>分类</th><th>负责人</th><th>部门</th>
-         <th>开单日</th><th>接单日</th><th>状态</th><th>进度(%)</th>
-         <th>总天数</th><th>完成日</th><th>原因</th>
-       </tr>
-     </thead>
-     <tbody></tbody>
-   </table>
- 
-   <h3>📊 汇总表</h3>
-   <div id="summaryTable"></div>
-   <h3>📌 未完成原因统计</h3>
-   <div id="reasonTable"></div>
-   <h3>📈 圆形图</h3>
-   <canvas id="pieChart" width="300" height="300"></canvas>
- 
- </div>
- 
- <script>
- const viewPass = "zz251298"; // Mật khẩu xem
- const editPass = "aa879094"; // Mật khẩu chỉnh sửa
- let canEdit = false;         // Quyền chỉnh sửa
- let currentUser = "";        // Người dùng hiện tại
- const webhookURL = "https://script.google.com/macros/s/AKfycbxDOPRL00uvFxhQS2pYo8fBMAq-1dhu7Os5e51U6pkOu2KwEZoZPZdFuotyf9qXQO4gSA/exec"; // URL webhook
- 
- // 登录验证
- function checkViewPassword() {
-   const name = document.getElementById("usernameInput").value.trim();
-   const pass = document.getElementById("viewPassword").value;
-   if (pass === viewPass) {
-     currentUser = name || "匿名";
-     document.getElementById("displayName").innerText = currentUser;
-     document.getElementById("loginContainer").classList.add("hidden");
-     document.getElementById("mainContainer").classList.remove("hidden");
-     loadData();
-     updateSummary(); // Initial update
-     
-     // Gửi thông tin đăng nhập tới Google Sheets
-     sendLoginInfo(currentUser);
-   } else {
-     alert("密码错误，无法进入。");
-   }
- }
- function sendLoginInfo(user) {
-   const data = {
-     user: user,
-     time: new Date(),
-     action: "Đăng nhập hệ thống"
-   };
- 
-   fetch(webhookURL, {
-     method: "POST",
-     headers: {
-       "Content-Type": "application/json"
-     },
-     body: JSON.stringify(data) // Chuyển dữ liệu thành chuỗi JSON
-   })
-   .then(response => response.text())
-   .then(data => console.log("Success:", data))
-   .catch(error => console.error("Error:", error));
- }
- 
+
+      button {
+        width: 100%;
+        font-size: 18px;
+      }
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+
+    input[type="text"]:focus, input[type="number"]:focus, select:focus {
+      border-color: #4CAF50;
+      outline: none;
+      background-color: #f9f9f9;
+    }
+
+    input[type="text"]:hover, input[type="number"]:hover, select:hover {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+<script>
+  document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
+        (e.ctrlKey && e.key === 'U')) {
+      e.preventDefault();
+      alert("操作已被禁用！");
+      return false;
+    }
+  });
+
+  function sendWebhook(message) {
+    fetch("URL_WEBHOOK", {
+      method: "POST",
+      body: JSON.stringify({ content: message }),
+      headers: { "Content-Type": "application/json" },
+    })
+    .then(response => response.text())
+    .then(data => console.log("Webhook response:", data))
+    .catch(error => console.error("Error sending webhook:", error));
+  }
+</script>
+<div id="loginContainer">
+  <h2>系统登录</h2>
+  <label for="usernameInput">用户名：</label>
+  <input type="text" id="usernameInput" placeholder="请输入用户名" />
+  <label for="viewPassword">密码：</label>
+  <input type="password" id="viewPassword" placeholder="请输入密码" />
+  <button onclick="checkViewPassword()">登录</button>
+</div>
+<div id="mainContainer" style="display:none;">
+  <div class="toolbar">
+    用户名：<span id="displayName"></span>
+    <button onclick="requireEditPassword()">启用编辑权限</button>
+    <button onclick="addRow()">➕ 添加一行</button>
+    <button onclick="saveData()">💾 保存</button>
+    <input id="searchInput" onkeyup="searchTable()" placeholder="🔍 搜索...">
+  </div>
+  <table id="detailTable">
+    <thead>
+      <tr>
+        <th>单号</th><th>内容</th><th>分类</th><th>负责人</th><th>部门</th>
+        <th>开单日</th><th>接单日</th><th>状态</th><th>进度(%)</th>
+        <th>总天数</th><th>完成日</th><th>原因</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <h3>📊 汇总表</h3>
+  <div id="summaryTable"></div>
+  <h3>📌 未完成原因统计</h3>
+  <div id="reasonTable"></div>
+</div>
+<script>
+  const viewPass = "zz251298";
+  const editPass = "aa879094";
+  let canEdit = false;
+  let currentUser = "";
+  const webhookURL = "https://script.google.com/macros/s/AKfycbwokHfxTPk3O56MUjlZwHqo9hsfwAg6N63nyNk-5WQKStRBmNl_LAWD3LC3gerjcfrqkQ/exec";
+  const correctPassword = "zz251298";
+
+  function checkViewPassword() {
+    const password = document.getElementById("viewPassword").value;
+    const username = document.getElementById("usernameInput").value.trim();
+    if (password === correctPassword) {
+      document.getElementById("loginContainer").style.display = "none";
+      document.getElementById("mainContainer").style.display = "block";
+      document.getElementById("displayName").innerText = username || "匿名";
+      loadData();
+      sendLoginInfo(username);
+    } else {
+      alert("密码错误，请重新输入！");
+    }
+  }
+  function sendLoginInfo(user) {
+    const data = {
+      user: user,
+      time: new Date(),
+      action: "Đăng nhập hệ thống"
+    };
+
+    fetch("https://script.google.com/macros/s/AKfycbwokHfxTPk3O56MUjlZwHqo9hsfwAg6N63nyNk-5WQKStRBmNl_LAWD3LC3gerjcfrqkQ/exec", {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" },
+    })
+    .then(res => res.text())
+    .then(response => {
+      console.log("📨 登录记录已发送:", response);
+    })
+    .catch(err => console.error("❌ 登录记录发送失败:", err));
+  }
+</script>
+<script>
  // 编辑权限
  function requireEditPassword() {
    const pw = prompt("请输入编辑密码：");
@@ -200,75 +270,65 @@
  
  // 加载数据
  function loadData() {
-   const storedData = localStorage.getItem("details");
-   if (storedData) {
-     const data = JSON.parse(storedData);
-     const tableBody = document.querySelector("#detailTable tbody");
- 
+  const storedData = localStorage.getItem("details");
+  if (storedData) {
+    const data = JSON.parse(storedData);
+    const tableBody = document.querySelector("#detailTable tbody");
+
      // Đảm bảo bảng sạch trước khi thêm dữ liệu mới
      tableBody.innerHTML = "";
  
      // Thêm dữ liệu vào bảng
      data.forEach(rowData => {
-       const row = tableBody.insertRow();
-       rowData.forEach(cellData => {
-         const cell = row.insertCell();
-         const input = document.createElement("input");
-         input.type = "text";
-         input.value = cellData;
-         input.oninput = updateSummary; // Đảm bảo gọi update mỗi khi có thay đổi
-         cell.appendChild(input);
-       });
-     });
-   } else {
-     console.log("没有保存的数据。");
-     // Có thể hiển thị thông báo nếu không có dữ liệu
-   }
- }
+      const row = tableBody.insertRow();
+      rowData.forEach(cellData => {
+        const cell = row.insertCell();
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = cellData;
+        input.oninput = updateSummary; // Đảm bảo gọi update mỗi khi có thay đổi
+        cell.appendChild(input);
+      });
+    });
+    updateSummary(); // Cập nhật bảng tổng hợp sau khi tải dữ liệu
+  } else {
+    console.log("没有保存的数据。");
+    // Có thể hiển thị thông báo nếu không có dữ liệu
+  }
+}
  
  // 更新汇总
  function updateSummary() {
-   const rows = Array.from(document.querySelector("#detailTable tbody").rows);
-   const groupRanges = [
-     { label: "0-10天", min: 0, max: 10 },
-     { label: "11-30天", min: 11, max: 30 },
-     { label: "31-60天", min: 31, max: 60 },
-     { label: "61-180天", min: 61, max: 180 },
-     { label: "180天以上", min: 181, max: Infinity },
-   ];
- 
-   const summary = {};
-   const reasonStats = { RWT: { "采购中": 0, "发包中": 0, "执行中": 0, "确认中": 0 }, MIT: { "采购中": 0, "发包中": 0, "执行中": 0, "确认中": 0 } };
-   const today = new Date();
- 
-   rows.forEach(row => {
-     const cells = Array.from(row.cells).map(c => c.firstChild?.value || "");
-     const [ , , category, , , , receiveDate, , progressStr, status, finishDate ] = cells;
-     const type = category.toUpperCase().includes("MIT") ? "MIT" : "RWT";
-     const progress = parseInt(progressStr) || 0;
-     const done = progress === 100;
-     const dateRcv = receiveDate ? new Date(receiveDate) : null;
-     const dateFin = finishDate ? new Date(finishDate) : null;
- 
-     let dayCount = 0;
-     if (dateRcv) {
-       dayCount = done && dateFin ? Math.floor((dateFin - dateRcv) / (1000 * 60 * 60 * 24)) : Math.floor((today - dateRcv) / (1000 * 60 * 60 * 24));
-     }
- 
-     const range = groupRanges.find(r => dayCount >= r.min && dayCount <= r.max)?.label || "未知";
-     if (!summary[range]) summary[range] = { RWT: { 完成: 0, 未完成: 0 }, MIT: { 完成: 0, 未完成: 0 } };
-     summary[range][type][done ? "完成" : "未完成"]++;
- 
-     const dayCell = row.cells[9];
-     if (dayCell && dateRcv) dayCell.firstChild.value = dayCount;
- 
-     // Cập nhật lý do chưa hoàn thành dựa trên trạng thái và tiến độ
-     updateReasonSummary(reasonStats, {进度: progress, 状态: status, 分类: type, 原因: row.cells[11].firstChild?.value});
-   });
- 
-   renderSummaryTable(summary);
-   renderReasonTable(reasonStats); // Cập nhật bảng lý do
-   drawChart(summary);  // Cập nhật biểu đồ
+  const rows = Array.from(document.querySelector("#detailTable tbody").rows);
+  const groupRanges = [
+    { label: "0-10天", min: 0, max: 10 },
+    { label: "11-30天", min: 11, max: 30 },
+    { label: "31-60天", min: 31, max: 60 },
+    { label: "61-180天", min: 61, max: 180 },
+    { label: "180天以上", min: 181, max: Infinity },
+  ];
+
+  const summary = {};
+  rows.forEach(row => {
+    const cells = Array.from(row.cells).map(c => c.firstChild?.value || "");
+    const [ , , category, , , , receiveDate, , progressStr] = cells;
+    const progress = parseInt(progressStr) || 0;
+
+    const dayCount = calculateDayCount(receiveDate); // Tính số ngày đã qua từ ngày nhận
+    const range = groupRanges.find(r => dayCount >= r.min && dayCount <= r.max)?.label || "未知";
+    if (!summary[range]) summary[range] = { RWT: { 完成: 0, 未完成: 0 }, MIT: { 完成: 0, 未完成: 0 } };
+    if (category === "RWT") {
+      summary[range].RWT[progress === 100 ? "完成" : "未完成"]++;
+    } else if (category === "MIT") {
+      summary[range].MIT[progress === 100 ? "完成" : "未完成"]++;
+    }
+
+    const dayCell = row.cells[9];
+    if (dayCell && dayCount) dayCell.firstChild.value = dayCount;
+  });
+
+  renderSummaryTable(summary);
+  renderReasonTable(); // Hiển thị bảng thống kê
 }
 function renderSummaryTable(data) {
    let html = `<table><tr><th>范围</th><th>RWT完成</th><th>RWT未完成</th><th>MIT完成</th><th>MIT未完成</th></tr>`;
@@ -285,164 +345,63 @@ function renderSummaryTable(data) {
    html += `</table>`;
    document.getElementById("summaryTable").innerHTML = html;
 }
- 
- function renderReasonTable(data) {
-  const statuses = ["采购中", "发包中", "执行中", "确认中"];
-  let html = `<table><tr><th>分类</th>${statuses.map(r => `<th>${r}</th>`).join("")}</tr>`;
+function renderReasonTable(data) {
+  const rows = Array.from(document.querySelector("#detailTable tbody").rows);
+  const reasonCount = {};
 
-  for (const type in data) {
-    html += `<tr><td>${type}</td>${statuses.map(s => `<td>${data[type][s] || 0}</td>`).join("")}</tr>`;
-  }
+  rows.forEach(row => {
+    const cells = Array.from(row.cells).map(c => c.firstChild?.value || "");
+    const reason = cells[11]; // 第12列：原因
+    const progress = parseInt(cells[8]) || 0;
 
+    if (progress < 100 && reason.trim() !== "") {
+      if (!reasonCount[reason]) reasonCount[reason] = 0;
+      reasonCount[reason]++;
+    }
+  });
+
+  let html = `<table><tr><th>未完成原因</th><th>数量</th></tr>`;
+  Object.entries(reasonCount).forEach(([key, value]) => {
+    html += `<tr><td>${key}</td><td>${value}</td></tr>`;
+  });
   html += `</table>`;
+
   document.getElementById("reasonTable").innerHTML = html;
 }
-function updateReasonSummary(summary, rowData) {
-   const progress = rowData['进度']; // Lấy tiến độ
-   const status = rowData['状态']; // Lấy trạng thái
-   const type = rowData['分类']; // RWT/MIT
-
-   // Nếu tiến độ không phải 100% và trạng thái không phải 已完成
-   if (progress !== 100 && status !== "已完成") {
-     const reason = rowData['原因']; // Lý do chưa hoàn thành
-
-     // Cập nhật lý do vào bảng summary
-     if (!summary[type]) summary[type] = {};
-     if (!summary[type][reason]) summary[type][reason] = 0;
-     summary[type][reason] += 1;
-   }
+function calculateDayCount(receiveDate) {
+  const today = new Date();
+  const receiveDateObj = new Date(receiveDate);
+  const diffTime = today - receiveDateObj;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
 }
- function drawPieChart() {
-     const table = document.getElementById("summaryTable");
-     const rows = table.rows;
-     
-     // Dữ liệu cho biểu đồ
-     const categories = [];  // Loại đơn
-     const progress = [];    // Tiến độ
- 
-     // Duyệt qua các hàng của bảng để lấy dữ liệu
-     for (let i = 1; i < rows.length; i++) {
-       categories.push(rows[i].cells[0].innerText);  // Loại đơn (RWT, MIT)
-       progress.push(parseInt(rows[i].cells[2].innerText));  // Tiến độ
-     }
- 
-     // Truy cập phần tử canvas và tạo context
-     const canvas = document.getElementById("pieChart");
-     const ctx = canvas.getContext("2d");
- 
-     // Tính toán tổng tiến độ
-     const totalProgress = progress.reduce((a, b) => a + b, 0);
- 
-     // Tạo các màu sắc cho các phần của biểu đồ tròn
-     const colors = ['#FF5733', '#33FF57', '#3357FF', '#FF33A8'];
- 
-     // Xoá biểu đồ cũ
-     ctx.clearRect(0, 0, canvas.width, canvas.height);
- 
-     // Vẽ biểu đồ tròn
-     let startAngle = 0;
-     for (let i = 0; i < progress.length; i++) {
-       const sliceAngle = (progress[i] / totalProgress) * (Math.PI * 2); // Tính góc phần tử
- 
-       // Vẽ phần cắt của biểu đồ tròn
-       ctx.beginPath();
-       ctx.arc(50, 40, 15, startAngle, startAngle + sliceAngle); // Vẽ phần tròn
-       ctx.lineTo(50, 40); // Vẽ đường thẳng từ điểm giữa
-       ctx.fillStyle = colors[i % colors.length]; // Chọn màu sắc (đảm bảo vòng lại màu khi có nhiều phần)
-       ctx.fill();
- 
-       // Cập nhật góc bắt đầu cho phần tiếp theo
-       startAngle += sliceAngle;
- 
-       // Ghi chú tên và tiến độ lên biểu đồ
-       ctx.fillStyle = '#000000';
-       ctx.fillText(categories[i] + ": " + progress[i] + "%", 250 + Math.cos(startAngle - sliceAngle / 2) * 160, 200 + Math.sin(startAngle - sliceAngle / 2) * 160);
-     }
-   }
- 
- // Vẽ lại biểu đồ mỗi khi bảng chi tiết thay đổi
- function drawChart(summary) {
-   const ctx = document.getElementById('pieChart').getContext('2d');
-   const categories = Object.keys(summary);
-
-   // Dữ liệu biểu đồ
-   const rwtCompleted = categories.map(category => summary[category].RWT["完成"]);
-   const rwtNotCompleted = categories.map(category => summary[category].RWT["未完成"]);
-   const mitCompleted = categories.map(category => summary[category].MIT["完成"]);
-   const mitNotCompleted = categories.map(category => summary[category].MIT["未完成"]);
-
-   // Dữ liệu biểu đồ tròn
-   const chartData = {
-     labels: categories,
-     datasets: [{
-       label: 'RWT 完成',
-       data: rwtCompleted,
-       backgroundColor: '#FF5733',
-     }, {
-       label: 'RWT 未完成',
-       data: rwtNotCompleted,
-       backgroundColor: '#FFBD33',
-     }, {
-       label: 'MIT 完成',
-       data: mitCompleted,
-       backgroundColor: '#33FF57',
-     }, {
-       label: 'MIT 未完成',
-       data: mitNotCompleted,
-       backgroundColor: '#3357FF',
-     }]
-   };
-
-   // Tùy chỉnh biểu đồ tròn
-   const chartOptions = {
-     responsive: true,
-     plugins: {
-       legend: {
-         position: 'top',
-       },
-       tooltip: {
-         callbacks: {
-           label: function(tooltipItem) {
-             return `${tooltipItem.dataset.label}: ${tooltipItem.raw}`;
-           }
-         }
-       }
-     }
-   };
-
-   // Tạo biểu đồ
-   new Chart(ctx, {
-     type: 'pie',
-     data: chartData,
-     options: chartOptions
-   });
-  }
-    function drawPieChart() {
-      const summary = JSON.parse(localStorage.getItem("summary"));
-      if (summary) {
-        drawChart(summary);
-      } else {
-        console.log("No summary data found to draw the chart.");
-      }
-    }
- 
- drawPieChart();
- function searchTable() {
-   const input = document.getElementById("searchInput").value.toLowerCase();
-   const rows = document.querySelectorAll("#detailTable tbody tr");
-   rows.forEach(row => {
-     const cells = Array.from(row.cells);
-     const matches = cells.some(cell => cell.textContent.toLowerCase().includes(input));
-     row.style.display = matches ? "" : "none";
-   });
- }
- window.onload = function () {
-       const savedUser = localStorage.getItem("loggedUser");
-       if (savedUser) {
-         currentUser = savedUser;
-         showMain();
-       }
-     };
+window.onload = function () {
+  fetch("https://script.google.com/macros/s/AKfycbwokHfxTPk3O56MUjlZwHqo9hsfwAg6N63nyNk-5WQKStRBmNl_LAWD3LC3gerjcfrqkQ/exec")
+    .then(response => response.json())
+    .then(data => {
+      const tbody = document.querySelector("#detailTable tbody");
+      data.slice(1).forEach(row => {
+        const tr = tbody.insertRow();
+        row.forEach((val, i) => {
+          const cell = tr.insertCell();
+          const input = document.createElement("input");
+          input.type = i === 8 ? "number" : "text";
+          input.value = val || "";
+          input.oninput = updateSummary;
+          cell.appendChild(input);
+        });
+      });
+      updateSummary();
+      renderReasonTable(data); // Sửa lại ở đây để truyền 'data'
+    });
+};
+function saveToGoogleSheet(data) {
+  fetch("https://script.google.com/macros/s/AKfycbwokHfxTPk3O56MUjlZwHqo9hsfwAg6N63nyNk-5WQKStRBmNl_LAWD3LC3gerjcfrqkQ/exec", {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: { "Content-Type": "application/json" }
+  }).then(res => alert("已儲存成功！"));
+}
  
  </script>
  </body>
