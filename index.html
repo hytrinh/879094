@@ -255,27 +255,28 @@
 
   console.log("Đang gửi payload:", payload);
 
-  fetch(scriptURL, {
-    method: "POST",
-    body: JSON.stringify(payload),  // Gửi dữ liệu dưới dạng JSON
-    headers: {
-      "Content-Type": "application/json",  // Đảm bảo header là JSON
-    }
-  })
-  .then(res => res.json())  // Chuyển phản hồi thành JSON
-  .then(response => {
-    console.log("Phản hồi từ Apps Script:", response);
-    if (response.status === "OK") {
-      alert("✅ Lưu thành công！");
-    } else {
-      alert("⚠️ Lưu thất bại：" + response.message);
-    }
-  })
-  .catch(err => {
-    console.error("❌ Lỗi kết nối:", err);
-    alert("❌ Lưu thất bại：" + err.message);
-  });
-}
+  fetch("AKfycbxQwuVcXlSaac8lrIVJrWSLUS0EKDs6aJhBBdASvp30J7vylNIRsgCOd6FUX0KU4az0uw", {
+  method: "POST",
+  body: JSON.stringify({ data: dataArray }),
+  headers: { "Content-Type": "application/json" }
+})
+.then(async res => {
+  if (!res.ok) {
+    throw new Error("HTTP lỗi " + res.status);
+  }
+
+  const result = await res.json();
+  
+  if (result.success) {
+    alert("✅ Lưu thành công！");
+  } else {
+    alert("❌ Lưu thất bại：" + (result.message || "Không rõ lỗi"));
+  }
+})
+.catch(error => {
+  alert("❌ Lưu thất bại：Kết nối lỗi hoặc webhook sai");
+  console.error("Lỗi fetch:", error);
+});
   function loadData() {
     fetch(scriptURL)
       .then(response => response.json())
