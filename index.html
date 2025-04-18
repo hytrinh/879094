@@ -157,6 +157,7 @@
   <div id="summaryTable"></div>
   <h3>📌 未完成原因统计</h3>
   <div id="reasonTable"></div>
+  <div id="totalDays"></div>
 </div>
 <script>
   const viewPass = "zz2512";
@@ -327,7 +328,7 @@
   // Hiển thị tổng số ngày
   document.getElementById("totalDays").innerText = "Tổng số ngày: " + totalDays;
 }
-  function calculateDayCount(receiveDate) {
+ function calculateDayCount(receiveDate) {
   const today = new Date();
   const receiveDateObj = new Date(receiveDate);
 
@@ -358,6 +359,7 @@ function calculateDayCount(dateStr) {
   ];
 
   const summary = {};
+  let totalDays = 0;
 
   rows.forEach(row => {
     const cells = Array.from(row.cells).map(c => c.firstChild?.value || "");
@@ -366,6 +368,8 @@ function calculateDayCount(dateStr) {
     const progress = parseInt(cells[8]) || 0;
 
     const dayCount = calculateDayCount(receiveDate);
+    totalDays += dayCount; // Cộng dồn tổng số ngày
+
     const range = groupRanges.find(r => dayCount >= r.min && dayCount <= r.max)?.label || "未知";
 
     if (!summary[range]) summary[range] = { RWT: { 完成: 0, 未完成: 0 }, MIT: { 完成: 0, 未完成: 0 } };
@@ -390,8 +394,8 @@ function calculateDayCount(dateStr) {
   html += "</tbody></table>";
   document.getElementById("summaryTable").innerHTML = html;
 
-  // Cập nhật tổng số ngày
-  calculateTotalDays();
+  // Hiển thị tổng số ngày
+  document.getElementById("totalDays").innerText = "Tổng số ngày: " + totalDays;
   updateReasonStats();
 }
   function updateReasonStats() {
