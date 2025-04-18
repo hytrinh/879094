@@ -232,51 +232,50 @@
   }
 
   function saveData() {
-  if (!canEdit) {
-    alert("請先輸入編輯密碼");
-    sendWebhook(`${currentUser} 試圖保存但沒有權限`);
+  const table = document.getElementById("mainTable");
+  const rows = table.querySelectorAll("tbody tr");
+  const dataArray = [];
+
+  rows.forEach(row => {
+    const cells = row.querySelectorAll("td input, td select, td textarea");
+    const rowData = [];
+
+    cells.forEach(cell => {
+      rowData.push(cell.value.trim());
+    });
+
+    if (rowData.some(value => value !== "")) {
+      dataArray.push(rowData);
+    }
+  });
+
+  if (dataArray.length === 0) {
+    alert("⚠️ Không có dữ liệu để lưu.");
     return;
   }
 
-  const rows = Array.from(document.querySelector("#detailTable tbody").rows);
-  const data = rows.map(r =>
-  Array.from(r.cells).map(c => {
-    const el = c.firstChild;
-    if (el && el.tagName === "INPUT") return el.value;
-    if (el && el.tagName === "SELECT") return el.value;
-    return el?.textContent || "";
+  fetch("https://script.google.com/macros/s/AKfycbxQwuVcXlSaac8lrIVJrWSLUS0EKDs6aJhBBdASvp30J7vylNIRsgCOd6FUX0KU4az0uw/exec", {
+    method: "POST",
+    body: JSON.stringify({ data: dataArray }),
+    headers: {
+      "Content-Type": "application/json"
+    }
   })
-);
+  .then(async res => {
+    if (!res.ok) throw new Error("HTTP lỗi " + res.status);
+    const result = await res.json();
+    if (result.success) {
+      alert("✅ Lưu thành công！");
+    } else {
+      alert("❌ Lưu thất bại：" + (result.message || "Không rõ lỗi"));
+    }
+  })
+  .catch(error => {
+    alert("❌ Lưu thất bại：Failed to fetch\nVui lòng kiểm tra lại kết nối hoặc webhook");
+    console.error(error);
+  });
+}
 
-  const payload = {
-    action: "保存",  // Tên hành động
-    data: data  // Dữ liệu bảng
-  };
-
-  console.log("Đang gửi payload:", payload);
-
-  fetch("AKfycbxQwuVcXlSaac8lrIVJrWSLUS0EKDs6aJhBBdASvp30J7vylNIRsgCOd6FUX0KU4az0uw", {
-  method: "POST",
-  body: JSON.stringify({ data: dataArray }),
-  headers: { "Content-Type": "application/json" }
-})
-.then(async res => {
-  if (!res.ok) {
-    throw new Error("HTTP lỗi " + res.status);
-  }
-
-  const result = await res.json();
-  
-  if (result.success) {
-    alert("✅ Lưu thành công！");
-  } else {
-    alert("❌ Lưu thất bại：" + (result.message || "Không rõ lỗi"));
-  }
-})
-.catch(error => {
-  alert("❌ Lưu thất bại：Kết nối lỗi hoặc webhook sai");
-  console.error("Lỗi fetch:", error);
-});
   function loadData() {
     fetch(scriptURL)
       .then(response => response.json())
