@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>进度跟踪系统</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="script.js?v=1.0"></script>
   <style>
     /* Tối ưu bảng */
     table {
@@ -198,7 +199,6 @@
     console.error("❌ 登录记录发送失败:", err);
   }
 }
-
   function requireEditPassword() {
     const pw = prompt("请输入编辑密码：");
     if (pw === editPass) {
