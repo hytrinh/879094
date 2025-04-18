@@ -319,80 +319,86 @@ function calculateDayCount(dateStr) {
 
   // Cập nhật bảng汇总和未完成原因统计
   function updateSummary() {
-    const rows = Array.from(document.querySelector("#detailTable tbody").rows);
-    const groupRanges = [
-      { label: "0-10天", min: 0, max: 10 },
-      { label: "11-30天", min: 11, max: 30 },
-      { label: "31-60天", min: 31, max: 60 },
-      { label: "61-180天", min: 61, max: 180 },
-      { label: "180天以上", min: 181, max: Infinity },
-    ];
+  const rows = Array.from(document.querySelector("#detailTable tbody").rows);
+  const groupRanges = [
+    { label: "0-10天", min: 0, max: 10 },
+    { label: "11-30天", min: 11, max: 30 },
+    { label: "31-60天", min: 31, max: 60 },
+    { label: "61-180天", min: 61, max: 180 },
+    { label: "180天以上", min: 181, max: Infinity },
+  ];
 
-    const summary = {};
+  const summary = {};
 
-    rows.forEach(row => {
-      const cells = Array.from(row.cells).map(c => c.firstChild?.value || "");
-      const category = cells[2];
-      const receiveDate = cells[6];
-      const progress = parseInt(cells[8]) || 0;
+  // Thống kê số ngày và các trạng thái
+  rows.forEach(row => {
+    const cells = Array.from(row.cells).map(c => c.firstChild?.value || "");
+    const category = cells[2];
+    const receiveDate = cells[6];
+    const progress = parseInt(cells[8]) || 0;
 
-      const dayCount = calculateDayCount(receiveDate);
-      const range = groupRanges.find(r => dayCount >= r.min && dayCount <= r.max)?.label || "未知";
+    const dayCount = calculateDayCount(receiveDate);
+    const range = groupRanges.find(r => dayCount >= r.min && dayCount <= r.max)?.label || "未知";
 
-      if (!summary[range]) summary[range] = { RWT: { 完成: 0, 未完成: 0 }, MIT: { 完成: 0, 未完成: 0 } };
+    if (!summary[range]) summary[range] = { RWT: { 完成: 0, 未完成: 0 }, MIT: { 完成: 0, 未完成: 0 } };
 
-      const status = progress >= 100 ? "完成" : "未完成";
+    const status = progress >= 100 ? "完成" : "未完成";
 
-      if (category === "RWT" || category === "MIT") {
-        summary[range][category][status]++;
-      }
-    });
-
-    // Hiển thị汇总表
-    let html = "<table><thead><tr><th>分组</th><th>RWT完成</th><th>RWT未完成</th><th>MIT完成</th><th>MIT未完成</th></tr></thead><tbody>";
-    for (const range in summary) {
-      const rwt = summary[range].RWT;
-      const mit = summary[range].MIT;
-      html += `<tr>
-        <td>${range}</td>
-        <td>${rwt.完成}</td><td>${rwt.未完成}</td>
-        <td>${mit.完成}</td><td>${mit.未完成}</td>
-      </tr>`;
+    if (category === "RWT" || category === "MIT") {
+      summary[range][category][status]++;
     }
-    html += "</tbody></table>";
-    document.getElementById("summaryTable").innerHTML = html;
+  });
 
-    updateReasonStats();
+  // Hiển thị汇总表
+  let html = "<table><thead><tr><th>分组</th><th>RWT完成</th><th>RWT未完成</th><th>MIT完成</th><th>MIT未完成</th></tr></thead><tbody>";
+  for (const range in summary) {
+    const rwt = summary[range].RWT;
+    const mit = summary[range].MIT;
+    html += `<tr>
+      <td>${range}</td>
+      <td>${rwt.完成}</td><td>${rwt.未完成}</td>
+      <td>${mit.完成}</td><td>${mit.未完成}</td>
+    </tr>`;
   }
+  html += "</tbody></table>";
+  document.getElementById("summaryTable").innerHTML = html;
 
+  // Cập nhật bảng 未完成原因统计
+  updateReasonStats();
+}
   function updateReasonStats() {
-    const rows = Array.from(document.querySelector("#detailTable tbody").rows);
-    const reasonCount = {};
+  const rows = Array.from(document.querySelector("#detailTable tbody").rows);
+  const reasonCount = {};
 
-    rows.forEach(row => {
-      const cells = Array.from(row.cells).map(c => c.firstChild?.value || "");
-      const progress = parseInt(cells[8]) || 0;
-      const reason = cells[11].trim();
+  rows.forEach(row => {
+    const cells = Array.from(row.cells).map(c => c.firstChild?.value || "");
+    const progress = parseInt(cells[8]) || 0;
+    const reason = cells[11].trim();
 
-      if (progress < 100 && reason) {
-        reasonCount[reason] = (reasonCount[reason] || 0) + 1;
-      }
-    });
-
-    let html = "<table><thead><tr><th>原因</th><th>数量</th></tr></thead><tbody>";
-    for (const reason in reasonCount) {
-      html += `<tr><td>${reason}</td><td>${reasonCount[reason]}</td></tr>`;
+    if (progress < 100 && reason) {
+      reasonCount[reason] = (reasonCount[reason] || 0) + 1;
     }
-    html += "</tbody></table>";
-    document.getElementById("reasonTable").innerHTML = html;
+  });
+
+  let html = "<table><thead><tr><th>原因</th><th>数量</th></tr></thead><tbody>";
+  for (const reason in reasonCount) {
+    html += `<tr><td>${reason}</td><td>${reasonCount[reason]}</td></tr>`;
   }
+  html += "</tbody></table>";
+  document.getElementById("reasonTable").innerHTML = html;
+}
 function calculateDayCount(receiveDate) {
   const today = new Date();
   const receiveDateObj = new Date(receiveDate);
+  
+  // Nếu không có ngày nhận, trả về 0
+  if (isNaN(receiveDateObj.getTime())) return 0;
+
   const diffTime = today - receiveDateObj;
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   return diffDays;
 }
+  
 window.onload = function () {
     fetch(scriptURL)
       .then(response => response.json())
