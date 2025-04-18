@@ -101,7 +101,7 @@
 </head>
 <body>
 <script>
-  const scriptURL = "https://script.google.com/macros/s/AKfycbwa6ZyI-F7cmLNS36MYoT6d0OI6P5Aumfk8v21pLClQIKKY5ymQmaUXngDFRzhs1Kbb1w/exec";
+  const scriptURL = "https://script.google.com/macros/s/AKfycbxQwuVcXlSaac8lrIVJrWSLUS0EKDs6aJhBBdASvp30J7vylNIRsgCOd6FUX0KU4az0uw/exec";
   document.addEventListener('contextmenu', function (e) {
     e.preventDefault();
   });
@@ -309,6 +309,35 @@
       row.style.display = match ? "" : "none";
     });
   }
+  function calculateTotalDays() {
+  const rows = Array.from(document.querySelector("#detailTable tbody").rows);
+  let totalDays = 0;
+  
+  rows.forEach(row => {
+    const cells = Array.from(row.cells).map(c => c.firstChild?.value || "");
+    const receiveDate = cells[6];  // Ngày nhận đơn (接单日期)
+    
+    // Tính số ngày từ ngày nhận đến hôm nay
+    if (receiveDate) {
+      const dayCount = calculateDayCount(receiveDate);
+      totalDays += dayCount;
+    }
+  });
+  
+  // Hiển thị tổng số ngày
+  document.getElementById("totalDays").innerText = "Tổng số ngày: " + totalDays;
+}
+  function calculateDayCount(receiveDate) {
+  const today = new Date();
+  const receiveDateObj = new Date(receiveDate);
+
+  // Nếu không có ngày nhận, trả về 0
+  if (isNaN(receiveDateObj.getTime())) return 0;
+
+  const diffTime = today - receiveDateObj;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));  // Tính số ngày
+  return diffDays;
+}
 function calculateDayCount(dateStr) {
     if (!dateStr) return 0;
     const startDate = new Date(dateStr);
@@ -330,11 +359,10 @@ function calculateDayCount(dateStr) {
 
   const summary = {};
 
-  // Thống kê số ngày và các trạng thái
   rows.forEach(row => {
     const cells = Array.from(row.cells).map(c => c.firstChild?.value || "");
-    const category = cells[2];
-    const receiveDate = cells[6];
+    const category = cells[2];  // Loại đơn (分类单)
+    const receiveDate = cells[6];  // Ngày nhận đơn (接单日期)
     const progress = parseInt(cells[8]) || 0;
 
     const dayCount = calculateDayCount(receiveDate);
@@ -349,7 +377,6 @@ function calculateDayCount(dateStr) {
     }
   });
 
-  // Hiển thị汇总表
   let html = "<table><thead><tr><th>分组</th><th>RWT完成</th><th>RWT未完成</th><th>MIT完成</th><th>MIT未完成</th></tr></thead><tbody>";
   for (const range in summary) {
     const rwt = summary[range].RWT;
@@ -363,7 +390,8 @@ function calculateDayCount(dateStr) {
   html += "</tbody></table>";
   document.getElementById("summaryTable").innerHTML = html;
 
-  // Cập nhật bảng 未完成原因统计
+  // Cập nhật tổng số ngày
+  calculateTotalDays();
   updateReasonStats();
 }
   function updateReasonStats() {
