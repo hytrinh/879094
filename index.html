@@ -100,6 +100,7 @@
 </head>
 <body>
 <script>
+  const scriptURL = "https://script.google.com/macros/s/AKfycbxgafa_4zDxEPkcK98Inqse3Cu7O9MAKQQVwDPqwknrZdBqSfXshfapzg6DT1xmF-24zA/exec";
   document.addEventListener('contextmenu', function (e) {
     e.preventDefault();
   });
@@ -157,35 +158,36 @@
   <div id="reasonTable"></div>
 </div>
 <script>
-  const viewPass = "zz251298";
+  const viewPass = "zz2512";
   const editPass = "aa879094";
   let canEdit = false;
   let currentUser = "";
   const webhookURL = "https://script.google.com/macros/s/AKfycbxgafa_4zDxEPkcK98Inqse3Cu7O9MAKQQVwDPqwknrZdBqSfXshfapzg6DT1xmF-24zA/exec";
+  const correctPassword = "zz2512";
 
   function checkViewPassword() {
-  const password = document.getElementById("viewPassword").value;
-  const username = document.getElementById("usernameInput").value.trim();
-  if (password === viewPass) {
-    document.getElementById("loginContainer").style.display = "none";
-    document.getElementById("mainContainer").style.display = "block";
-    document.getElementById("displayName").innerText = username || "匿名";
-    currentUser = username || "匿名"; // gán luôn currentUser
-    loadData();
-    sendLoginInfo(username);
-  } else {
-    alert("密码错误，请重新输入！");
+    const password = document.getElementById("viewPassword").value;
+    const username = document.getElementById("usernameInput").value.trim();
+    if (password === correctPassword) {
+      document.getElementById("loginContainer").style.display = "none";
+      document.getElementById("mainContainer").style.display = "block";
+      document.getElementById("displayName").innerText = username || "匿名";
+      loadData();
+      sendLoginInfo(username);
+    } else {
+      alert("密码错误，请重新输入！");
+    }
   }
-}
 
   function sendLoginInfo(user) {
-    const data = {
-      user: user,
-      time: new Date(),
-      action: "Đăng nhập hệ thống"
-    };
+  const data = {
+    user: user,
+    time: new Date(),
+    action: "Đăng nhập hệ thống"
+  };
 
-      fetch(webhookURL, {
+  try {
+    fetch(scriptURL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
@@ -193,9 +195,11 @@
     .then(res => res.text())
     .then(response => {
       console.log("📨 登录记录已发送:", response);
-    })
-    .catch(err => console.error("❌ 登录记录发送失败:", err));
+    });
+  } catch (err) {
+    console.error("❌ 登录记录发送失败:", err);
   }
+}
 
   function requireEditPassword() {
     const pw = prompt("请输入编辑密码：");
@@ -231,7 +235,7 @@
   function saveData() {
   if (!canEdit) {
     alert("请先输入编辑密码");
-    sendWebhook(`${currentUser} 尝试保存数据但无权限`);
+    sendWebhook(`${currentUser} 尝试保存数据但无权限`); // Sửa lỗi ở đây
     return;
   }
 
@@ -240,29 +244,25 @@
     Array.from(r.cells).map(c => c.firstChild?.value || "")
   );
 
-  // Lưu dữ liệu vào localStorage
-  localStorage.setItem("details", JSON.stringify(data));
-
-  // Gửi dữ liệu về Google Sheets
   fetch("https://script.google.com/macros/s/AKfycbxDOPRL00uvFxhQS2pYo8fBMAq-1dhu7Os5e51U6pkOu2KwEZoZPZdFuotyf9qXQO4gSA/exec", {
-    method: "POST",
-    body: JSON.stringify(data),
-    headers: {
-      "Content-Type": "application/json",
-    }
-  })
-  .then(res => res.text())
-  .then(response => {
-    if (response === "OK") {
-      alert("✅ 儲存成功！");
-    } else {
-      alert("⚠️ 發生錯誤：" + response);
-    }
-  })
-  .catch(err => {
-    console.error("錯誤:", err);
-    alert("❌ 儲存失敗，請稍後再試");
-  });
+  method: "POST",
+  body: JSON.stringify(data),
+  headers: {
+    "Content-Type": "application/json",
+  }
+})
+.then(res => res.text())
+.then(response => {
+  if (response === "OK") {
+    alert("✅ 儲存成功！");
+  } else {
+    alert("⚠️ 發生錯誤：" + response);
+  }
+})
+.catch(err => {
+  console.error("錯誤:", err);
+  alert("❌ 儲存失敗，請稍後再試");
+});
 }
   function loadData() {
   const storedData = localStorage.getItem("details");
@@ -336,20 +336,27 @@
   renderSummaryTable(summary);
   renderReasonTable(); // Hiển thị bảng thống kê
 }
-function renderSummaryTable(data) {
-   let html = `<table><tr><th>范围</th><th>RWT完成</th><th>RWT未完成</th><th>MIT完成</th><th>MIT未完成</th></tr>`;
-   const total = { RWT完成: 0, RWT未完成: 0, MIT完成: 0, MIT未完成: 0 };
-   Object.keys(data).forEach(range => {
-     const r = data[range];
-     html += `<tr><td>${range}</td><td>${r.RWT.完成}</td><td>${r.RWT.未完成}</td><td>${r.MIT.完成}</td><td>${r.MIT.未完成}</td></tr>`;
-     total.RWT完成 += r.RWT.完成;
-     total.RWT未完成 += r.RWT.未完成;
-     total.MIT完成 += r.MIT.完成;
-     total.MIT未完成 += r.MIT.未完成;
-   });
-   html += `<tr><td><b>总计</b></td><td><b>${total.RWT完成}</b></td><td><b>${total.RWT未完成}</b></td><td><b>${total.MIT完成}</b></td><td><b>${total.MIT未完成}</b></td></tr>`;
-   html += `</table>`;
-   document.getElementById("summaryTable").innerHTML = html;
+function renderSummaryTable(summary) {
+  const container = document.getElementById("summaryTable");
+  container.innerHTML = "";
+
+  const table = document.createElement("table");
+  const header = table.insertRow();
+  header.innerHTML = `
+    <th>区间</th><th>RWT 完成</th><th>RWT 未完成</th>
+    <th>MIT 完成</th><th>MIT 未完成</th>
+  `;
+
+  Object.entries(summary).forEach(([range, data]) => {
+    const row = table.insertRow();
+    row.innerHTML = `
+      <td>${range}</td>
+      <td>${data.RWT.完成}</td><td>${data.RWT.未完成}</td>
+      <td>${data.MIT.完成}</td><td>${data.MIT.未完成}</td>
+    `;
+  });
+
+  container.appendChild(table);
 }
 function renderReasonTable(data) {
   const rows = Array.from(document.querySelector("#detailTable tbody").rows);
@@ -424,16 +431,6 @@ window.onload = function () {
   .then(result => console.log(result))
   .catch(error => console.error("Error:", error));
 }
-window.onload = () => {
-  const storedUser = localStorage.getItem("username");
-  const storedView = localStorage.getItem("viewed");
-  if (storedUser && storedView === "true") {
-    document.getElementById("loginContainer").style.display = "none";
-    document.getElementById("mainContainer").style.display = "block";
-    document.getElementById("displayName").innerText = storedUser;
-    currentUser = storedUser;
-    loadData();
-  };
  </script>
  </body>
  </html>
