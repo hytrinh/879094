@@ -100,7 +100,7 @@
 </head>
 <body>
 <script>
-  const scriptURL = "https://script.google.com/macros/s/AKfycbyOI7lO3tCX1lbczF--N9MvNRJlTMBWw-k8Ux4ZNLNRSI0RJLB3ehP1hr9MjjiGSZO6rQ/exec";
+  const scriptURL = "https://script.google.com/macros/s/AKfycbxfEKTqTsXWpIYs3SIIZ3_n_9xeyzKoc53sMoVAQ0mY6hFovN_GFxN26gQpVRD5KVfpKw/exec";
   document.addEventListener('contextmenu', function (e) {
     e.preventDefault();
   });
@@ -162,7 +162,7 @@
   const editPass = "aa879094";
   let canEdit = false;
   let currentUser = "";
-  const webhookURL = "https://script.google.com/macros/s/AKfycbyOI7lO3tCX1lbczF--N9MvNRJlTMBWw-k8Ux4ZNLNRSI0RJLB3ehP1hr9MjjiGSZO6rQ/exec";
+  const webhookURL = "https://script.google.com/macros/s/AKfycbxfEKTqTsXWpIYs3SIIZ3_n_9xeyzKoc53sMoVAQ0mY6hFovN_GFxN26gQpVRD5KVfpKw/exec";
   const correctPassword = "zz2512";
 
   function checkViewPassword() {
@@ -273,32 +273,27 @@
   });
 }
   function loadData() {
-  const storedData = localStorage.getItem("details");
-  if (storedData) {
-    const data = JSON.parse(storedData);
-    const tableBody = document.querySelector("#detailTable tbody");
+    fetch(scriptURL)
+      .then(response => response.json())
+      .then(data => {
+        const tableBody = document.querySelector("#detailTable tbody");
+        tableBody.innerHTML = "";
 
-     // Đảm bảo bảng sạch trước khi thêm dữ liệu mới
-     tableBody.innerHTML = "";
- 
-     // Thêm dữ liệu vào bảng
-     data.forEach(rowData => {
-      const row = tableBody.insertRow();
-      rowData.forEach(cellData => {
-        const cell = row.insertCell();
-        const input = document.createElement("input");
-        input.type = "text";
-        input.value = cellData;
-        input.oninput = updateSummary; // Đảm bảo gọi update mỗi khi có thay đổi
-        cell.appendChild(input);
+        if (Array.isArray(data)) {
+          data.forEach(rowData => {
+            const row = tableBody.insertRow();
+            rowData.forEach(cellData => {
+              const cell = row.insertCell();
+              const input = document.createElement("input");
+              input.type = "text";
+              input.value = cellData;
+              input.oninput = updateSummary;
+              cell.appendChild(input);
+            });
+          });
+        }
       });
-    });
-    updateSummary(); // Cập nhật bảng tổng hợp sau khi tải dữ liệu
-  } else {
-    console.log("没有保存的数据。");
-    // Có thể hiển thị thông báo nếu không có dữ liệu
   }
-}
 
 
   function searchTable() {
@@ -345,27 +340,25 @@
   renderReasonTable(); // Hiển thị bảng thống kê
 }
 function renderSummaryTable(summary) {
-  const container = document.getElementById("summaryTable");
-  container.innerHTML = "";
-
-  const table = document.createElement("table");
-  const header = table.insertRow();
-  header.innerHTML = `
-    <th>区间</th><th>RWT 完成</th><th>RWT 未完成</th>
-    <th>MIT 完成</th><th>MIT 未完成</th>
-  `;
-
-  Object.entries(summary).forEach(([range, data]) => {
-    const row = table.insertRow();
-    row.innerHTML = `
-      <td>${range}</td>
-      <td>${data.RWT.完成}</td><td>${data.RWT.未完成}</td>
-      <td>${data.MIT.完成}</td><td>${data.MIT.未完成}</td>
+    const container = document.getElementById("summaryTable");
+    container.innerHTML = "";
+    const table = document.createElement("table");
+    const header = table.insertRow();
+    header.innerHTML = `
+      <th>区间</th><th>RWT 完成</th><th>RWT 未完成</th>
+      <th>MIT 完成</th><th>MIT 未完成</th>
     `;
-  });
+    Object.entries(summary).forEach(([range, data]) => {
+      const row = table.insertRow();
+      row.innerHTML = `
+        <td>${range}</td>
+        <td>${data.RWT.完成}</td><td>${data.RWT.未完成}</td>
+        <td>${data.MIT.完成}</td><td>${data.MIT.未完成}</td>
+      `;
+    });
 
-  container.appendChild(table);
-}
+    container.appendChild(table);
+  }
 function renderReasonTable(data) {
   const rows = Array.from(document.querySelector("#detailTable tbody").rows);
   const reasonCount = {};
@@ -397,36 +390,25 @@ function calculateDayCount(receiveDate) {
   return diffDays;
 }
 window.onload = function () {
-      fetch("https://script.google.com/macros/s/AKfycbyOI7lO3tCX1lbczF--N9MvNRJlTMBWw-k8Ux4ZNLNRSI0RJLB3ehP1hr9MjjiGSZO6rQ/exec")  // Thay đổi URL theo script của bạn
-        .then(response => response.json())  // Giả sử dữ liệu trả về là JSON
-        .then(data => {
-          const tbody = document.querySelector("#detailTable tbody");
-
-          // Kiểm tra dữ liệu trả về có đúng định dạng hay không
-          if (Array.isArray(data) && data.length > 1) {
-            // Lặp qua từng dòng dữ liệu (bỏ qua tiêu đề)
-            data.slice(1).forEach(row => {
-              const tr = tbody.insertRow();  // Thêm dòng mới vào bảng
-              row.forEach((val, i) => {
-                const cell = tr.insertCell();  // Thêm ô vào dòng
-                const input = document.createElement("input");  // Tạo ô input
-                input.type = i === 8 ? "number" : "text";  // Nếu là cột 9 thì là số
-                input.value = val || "";  // Gán giá trị vào ô input
-                input.oninput = updateSummary;  // Cập nhật tổng hợp khi thay đổi giá trị
-                cell.appendChild(input);  // Thêm ô input vào ô bảng
-              });
+    fetch(scriptURL)
+      .then(response => response.json())
+      .then(data => {
+        const tbody = document.querySelector("#detailTable tbody");
+        if (Array.isArray(data)) {
+          data.forEach(item => {
+            const row = tbody.insertRow();
+            item.forEach(val => {
+              const cell = row.insertCell();
+              const input = document.createElement("input");
+              input.type = "text";
+              input.value = val;
+              input.addEventListener("input", updateSummary);
+              cell.appendChild(input);
             });
-
-            updateSummary();  // Cập nhật tổng hợp sau khi dữ liệu được thêm vào
-            renderReasonTable(data);  // Hiển thị bảng lý do từ dữ liệu
-          } else {
-            console.error("Dữ liệu không hợp lệ hoặc không có");
-          }
-        })
-        .catch(error => {
-          console.error("Lỗi khi lấy dữ liệu:", error);  // Xử lý lỗi nếu có
-        });
-    };
+          });
+        }
+      });
+  };
  </script>
  </body>
  </html>
