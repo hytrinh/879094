@@ -163,20 +163,20 @@
   let canEdit = false;
   let currentUser = "";
 
-  function checkViewPassword() {
-    const password = document.getElementById("viewPassword").value;
-    const username = document.getElementById("usernameInput").value.trim();
-    if (password === correctPassword) {
-      document.getElementById("loginContainer").style.display = "none";
-      document.getElementById("mainContainer").style.display = "block";
-      document.getElementById("displayName").innerText = username || "匿名";
-      loadData();
-      sendLoginInfo(username);
-    } else {
-      alert("密码错误，请重新输入！");
-    }
-  }
 
+  function checkViewPassword() {
+  const password = document.getElementById("viewPassword").value;
+  const username = document.getElementById("usernameInput").value.trim();
+  if (password === viewPass) {
+    document.getElementById("loginContainer").style.display = "none";
+    document.getElementById("mainContainer").style.display = "block";
+    document.getElementById("displayName").innerText = username || "匿名";
+    loadData();
+    sendLoginInfo(username);
+  } else {
+    alert("密码错误，请重新输入！");
+  }
+}
   function sendLoginInfo(user) {
   const data = {
     user: user,
