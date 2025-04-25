@@ -165,20 +165,19 @@
   let canEdit = false;
   let currentUser = "";
 
-
   function checkViewPassword() {
-  const password = document.getElementById("viewPassword").value;
-  const username = document.getElementById("usernameInput").value.trim();
-  if (password === viewPass) {
-    document.getElementById("loginContainer").style.display = "none";
-    document.getElementById("mainContainer").style.display = "block";
-    document.getElementById("displayName").innerText = username || "匿名";
-    loadData();
-    sendLoginInfo(username);
-  } else {
-    alert("密码错误，请重新输入！");
+    const password = document.getElementById("viewPassword").value;
+    const username = document.getElementById("usernameInput").value.trim();
+    if (password === viewPass) {
+      document.getElementById("loginContainer").style.display = "none";
+      document.getElementById("mainContainer").style.display = "block";
+      document.getElementById("displayName").innerText = username || "匿名";
+      loadData();
+      sendLoginInfo(username);
+    } else {
+      alert("密码错误，请重新输入！");
+    }
   }
-}
   function sendLoginInfo(user) {
   const data = {
     user: user,
@@ -212,36 +211,58 @@
   }
 
   function addRow() {
-    if (!canEdit) {
-      alert("请先输入编辑密码");
-      sendWebhook(`${currentUser} 尝试添加行但无权限`);
-      return;
-    }
-
-    const tbody = document.querySelector("#detailTable tbody");
-    const row = tbody.insertRow();
-
-    // Thêm các ô dữ liệu
-    for (let i = 0; i < 12; i++) {
-      const cell = row.insertCell();
-      const input = document.createElement("input");
-      input.type = i === 8 ? "number" : "text"; // Kiểu ô số cho tiến độ
-      input.oninput = updateSummary;
-      cell.appendChild(input);
-    }
+  if (!canEdit) {
+    alert("请先输入编辑密码");
+    sendWebhook(`${currentUser} 尝试添加行但无权限`);
+    return;
   }
 
-  function saveData() {
-  const table = document.getElementById("mainTable");
-  const rows = table.querySelectorAll("tbody tr");
+  const table = document.querySelector("#detailTable tbody");
+  const row = document.createElement("tr");
+
+  // Tạo các ô trong hàng mới
+  for (let i = 0; i < 13; i++) {
+    const cell = document.createElement("td");
+    const input = document.createElement("input");
+    input.type = "text";
+
+    // Thêm kiểu date cho cột "接单日" và "完成日"
+    if (i === 6 || i === 10) input.type = "date";
+
+    // Cột "总天数" sẽ là readonly
+    if (i === 9) {
+      input.readOnly = true;
+      input.style.backgroundColor = "#f5f5f5";
+    }
+
+    // Lắng nghe sự kiện nhập liệu
+    input.addEventListener("input", () => {
+      updateSummary();  // Cập nhật lại bảng tổng hợp mỗi khi có thay đổi
+    });
+
+    cell.appendChild(input);
+    row.appendChild(cell);
+  }
+
+  table.appendChild(row);
+}
+
+function saveData() {
+  if (!canEdit) {
+    alert("❌ 无编辑权限，无法保存！");
+    sendWebhook(`${currentUser} 尝试保存但无权限`);
+    return;
+  }
+
+  const table = document.querySelector("#detailTable tbody");
+  const rows = table.querySelectorAll("tr");
   const dataArray = [];
 
   rows.forEach(row => {
-    const cells = row.querySelectorAll("td input, td select, td textarea");
+    const inputs = row.querySelectorAll("input");
     const rowData = [];
-
-    cells.forEach(cell => {
-      rowData.push(cell.value.trim());
+    inputs.forEach(input => {
+      rowData.push(input.value.trim());
     });
 
     if (rowData.some(value => value !== "")) {
@@ -250,29 +271,28 @@
   });
 
   if (dataArray.length === 0) {
-    alert("⚠️ Không có dữ liệu để lưu.");
+    alert("⚠️ 没有要保存的数据！");
     return;
   }
-  }
 
- fetch("https://script.google.com/macros/s/AKfycbxQwuVcXlSaac8lrIVJrWSLUS0EKDs6aJhBBdASvp30J7vylNIRsgCOd6FUX0KU4az0uw/exec", {
-  method: "POST",
-  body: JSON.stringify({ data: dataArray }),
-  headers: { "Content-Type": "application/json" }
-})
-.then(res => res.json())
-.then(result => {
-  if (result.success) {
-    alert("✅ Lưu thành công！");
-  } else {
-    alert("❌ Lưu thất bại：" + result.message);
-  }
-})
-.catch(error => {
-  alert("❌ Lưu thất bại：Không thể kết nối server");
-  console.error(error);
+  fetch(scriptURL, {
+    method: "POST",
+    body: JSON.stringify({ data: dataArray }),
+    headers: { "Content-Type": "application/json" }
+  })
+  .then(res => res.json())
+  .then(result => {
+    if (result.success) {
+      alert("✅ 数据保存成功！");
+    } else {
+      alert("❌ 保存失败：" + result.message);
+    }
+  })
+  .catch(error => {
+  console.warn("连接服务器失败（暂未上传）", error);
 });
-  function loadData() {
+}
+function loadData() {
     fetch(scriptURL)
       .then(response => response.json())
       .then(data => {
@@ -282,12 +302,26 @@
         if (Array.isArray(data)) {
           data.forEach(rowData => {
             const row = tableBody.insertRow();
-            rowData.forEach(cellData => {
+            rowData.forEach((cellData, i) => {
               const cell = row.insertCell();
               const input = document.createElement("input");
-              input.type = "text";
+
               input.value = cellData;
-              input.oninput = updateSummary;
+              input.type = (i === 6 || i === 10) ? "date" : "text";
+              if (i === 9) {
+                input.readOnly = true;
+                input.style.backgroundColor = "#f5f5f5";
+              }
+
+              input.addEventListener("input", () => {
+                if (i === 6 || i === 10) {
+                  const rowInputs = row.querySelectorAll("input");
+                  const start = rowInputs[6].value;
+                  const end = rowInputs[10].value;
+                  rowInputs[9].value = calculateTotalDays(start, end);
+                }
+              });
+
               cell.appendChild(input);
             });
           });
@@ -314,23 +348,121 @@
             // Update summary and reason stats after table load
             updateSummary();
         }
-  function calculateTotalDays() {
-  const rows = Array.from(document.querySelector("#detailTable tbody").rows);
-  let totalDays = 0;
-  
+        function calculateTotalDays(startDateStr, endDateStr) {
+  if (!startDateStr) return '';
+  const startDate = new Date(startDateStr);
+  const endDate = endDateStr ? new Date(endDateStr) : new Date();
+
+  const diffTime = endDate.getTime() - startDate.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays > 0 ? diffDays : 0;
+}
+
+function updateReasonTable() {
+  const rows = document.querySelectorAll("#detailTable tbody tr");
+  const reasonCount = {};
+
   rows.forEach(row => {
-    const cells = Array.from(row.cells).map(c => c.firstChild?.value || "");
-    const receiveDate = cells[6];  // Ngày nhận đơn (接单日期)
-    
-    // Tính số ngày từ ngày nhận đến hôm nay
-    if (receiveDate) {
-      const dayCount = calculateDayCount(receiveDate);
-      totalDays += dayCount;
+    const inputs = row.querySelectorAll("input");
+    const reason = inputs[11]?.value.trim();
+    const status = inputs[7]?.value.trim();
+    const endDate = inputs[10]?.value;
+
+    if (!endDate && reason) {
+      reasonCount[reason] = (reasonCount[reason] || 0) + 1;
     }
   });
-  
-  // Hiển thị tổng số ngày
-  document.getElementById("totalDays").innerText = "Tổng số ngày: " + totalDays;
+
+  const reasonTable = document.getElementById("reasonTable");
+  let html = "<table><tr><th>原因</th><th>次數</th></tr>";
+  Object.entries(reasonCount).forEach(([key, val]) => {
+    html += `<tr><td>${key}</td><td>${val}</td></tr>`;
+  });
+  html += "</table>";
+  reasonTable.innerHTML = html;
+}
+
+function updateSummaryTable() {
+  const rows = document.querySelectorAll("#detailTable tbody tr");
+  const statusCount = {};
+
+  rows.forEach(row => {
+    const status = row.querySelectorAll("input")[7]?.value.trim();
+    if (status) {
+      statusCount[status] = (statusCount[status] || 0) + 1;
+    }
+  });
+
+  const summaryTable = document.getElementById("summaryTable");
+  let html = "<table><tr><th>狀態</th><th>次數</th></tr>";
+  Object.entries(statusCount).forEach(([key, val]) => {
+    html += `<tr><td>${key}</td><td>${val}</td></tr>`;
+  });
+  html += "</table>";
+  summaryTable.innerHTML = html;
+}
+
+function updateSummary() {
+  updateReasonTable();
+  updateSummaryTable();
+}
+
+// Tích hợp vào addRow (gợi ý đặt lại toàn bộ addRow nếu cần)
+function addRow(data = []) {
+  const tbody = document.querySelector("#detailTable tbody");
+  const row = document.createElement("tr");
+
+  const headers = [
+    "單號", "內容單", "分類單", "負責人", "部門",
+    "開單日期", "接單日期", "狀態", "進度",
+    "總日期", "完成單", "原因"
+  ];
+
+  for (let i = 0; i < headers.length; i++) {
+    const td = document.createElement("td");
+    const input = document.createElement("input");
+    input.type = (i === 5 || i === 6 || i === 10) ? "date" : "text";
+    input.value = data[i] || "";
+
+    // Tự động tính "總日期"
+    input.addEventListener("input", () => {
+  // Tự động cập nhật tổng ngày
+  if (i === 6 || i === 10) {
+    const rowInputs = row.querySelectorAll("input");
+    const start = rowInputs[6].value;
+    const end = rowInputs[10].value;
+    rowInputs[9].value = calculateTotalDays(start, end);
+  }
+  updateSummary(); // cập nhật mọi thống kê
+});
+    input.addEventListener("input", () => {
+      updateSummary(); // cập nhật bảng thống kê khi người dùng gõ
+    });
+
+    td.appendChild(input);
+    row.appendChild(td);
+  }
+
+  const delTd = document.createElement("td");
+  const delBtn = document.createElement("button");
+  delBtn.textContent = "X";
+  delBtn.className = "deleteRow";
+  delBtn.onclick = () => {
+    row.remove();
+    updateSummary();
+  };
+  delTd.appendChild(delBtn);
+  row.appendChild(delTd);
+
+  tbody.appendChild(row);
+  updateSummary();
+}
+function updateTotalDays(row) {
+  const inputs = row.querySelectorAll("input");
+  const startDate = inputs[6].value;
+  const endDate = inputs[10].value;
+  const totalDays = calculateTotalDays(startDate, endDate);
+  inputs[9].value = totalDays;
 }
  function calculateDayCount(receiveDate) {
             const today = new Date();
@@ -340,58 +472,58 @@
         }
 
         function updateSummary() {
-            const rows = Array.from(document.querySelector("#detailTable tbody").rows);
-            const groupRanges = [
-                { label: "0-10天", min: 0, max: 10 },
-                { label: "11-30天", min: 11, max: 30 },
-                { label: "31-60天", min: 31, max: 60 },
-                { label: "61-180天", min: 61, max: 180 },
-                { label: "180天以上", min: 181, max: Infinity },
-            ];
+  const rows = Array.from(document.querySelector("#detailTable tbody").rows);
+  const groupRanges = [
+    { label: "0-10天", min: 0, max: 10 },
+    { label: "11-30天", min: 11, max: 30 },
+    { label: "31-60天", min: 31, max: 60 },
+    { label: "61-180天", min: 61, max: 180 },
+    { label: "180天以上", min: 181, max: Infinity },
+  ];
 
-            const summary = {};
-            let totalDays = 0;
+  const summary = {};
+  let totalDays = 0;
 
-            rows.forEach(row => {
-                const cells = Array.from(row.cells).map(c => c.firstChild?.value || "");
-                const category = cells[2]; // Loại đơn (分类单)
-                const receiveDate = cells[6]; // Ngày nhận đơn (接单日期)
-                const progress = parseInt(cells[8]) || 0;
+  rows.forEach(row => {
+    const cells = Array.from(row.cells).map(c => c.firstChild?.value || "");
+    const category = cells[2]; // Loại đơn
+    const receiveDate = cells[6]; // Ngày nhận đơn
+    const progress = parseInt(cells[8]) || 0;
 
-                const dayCount = calculateDayCount(receiveDate);
-                totalDays += dayCount; // Cộng dồn tổng số ngày
+    const dayCount = calculateTotalDays(receiveDate, cells[10]);
+    totalDays += dayCount;  // Cộng dồn tổng số ngày
 
-                const range = groupRanges.find(r => dayCount >= r.min && dayCount <= r.max)?.label || "未知";
+    const range = groupRanges.find(r => dayCount >= r.min && dayCount <= r.max)?.label || "未知";
 
-                if (!summary[range]) summary[range] = { RWT: { 完成: 0, 未完成: 0 }, MIT: { 完成: 0, 未完成: 0 } };
+    if (!summary[range]) summary[range] = { RWT: { 完成: 0, 未完成: 0 }, MIT: { 完成: 0, 未完成: 0 } };
 
-                const status = progress >= 100 ? "完成" : "未完成";
+    const status = progress >= 100 ? "完成" : "未完成";
 
-                if (category === "RWT" || category === "MIT") {
-                    summary[range][category][status]++;
-                }
-            });
+    if (category === "RWT" || category === "MIT") {
+      summary[range][category][status]++;
+    }
+  });
 
-            let html = "<table><thead><tr><th>分组</th><th>RWT完成</th><th>RWT未完成</th><th>MIT完成</th><th>MIT未完成</th></tr></thead><tbody>";
-            for (const range in summary) {
-                const rwt = summary[range].RWT;
-                const mit = summary[range].MIT;
-                html += `<tr>
-                    <td>${range}</td>
-                    <td>${rwt.完成}</td><td>${rwt.未完成}</td>
-                    <td>${mit.完成}</td><td>${mit.未完成}</td>
-                </tr>`;
-            }
-            html += "</tbody></table>";
-            document.getElementById("summaryTable").innerHTML = html;
+  // Hiển thị bảng tổng hợp
+  let html = "<table><thead><tr><th>分组</th><th>RWT完成</th><th>RWT未完成</th><th>MIT完成</th><th>MIT未完成</th></tr></thead><tbody>";
+  for (const range in summary) {
+    const rwt = summary[range].RWT;
+    const mit = summary[range].MIT;
+    html += `<tr>
+        <td>${range}</td>
+        <td>${rwt.完成}</td><td>${rwt.未完成}</td>
+        <td>${mit.完成}</td><td>${mit.未完成}</td>
+    </tr>`;
+  }
+  html += "</tbody></table>";
+  document.getElementById("summaryTable").innerHTML = html;
 
-            // Hiển thị tổng số ngày
-            document.getElementById("totalDays").innerText = "总天数: " + totalDays;
+  // Hiển thị tổng số ngày
+  document.getElementById("totalDays").innerText = "总天数: " + totalDays;
 
-            // Cập nhật bảng lý do
-            updateReasonStats();
-        }
-
+  // Cập nhật bảng lý do
+  updateReasonStats();
+}
        function updateReasonStats() {
             const rows = Array.from(document.querySelector("#detailTable tbody").rows);
             const reasonCount = {
