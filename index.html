@@ -140,7 +140,8 @@
     用户名：<span id="displayName"></span>
     <button onclick="requireEditPassword()">启用编辑权限</button>
     <button onclick="addRow()">➕ 添加一行</button>
-    <button onclick="saveData()">💾 保存</button>
+    <button id="saveBtn" onclick="saveData()" style="background-color: #4CAF50; color: white;">
+      💾 保存</button>
     <input id="searchInput" onkeyup="searchTable()" placeholder="🔍 搜索...">
   </div>
   <table id="detailTable">
@@ -299,42 +300,42 @@ function saveData() {
 }
 
 function loadData() {
-    fetch(scriptURL)
-      .then(response => response.json())
-      .then(data => {
-        const tableBody = document.querySelector("#detailTable tbody");
-        tableBody.innerHTML = "";
+  fetch(scriptURL)
+    .then(response => response.json())
+    .then(data => {
+      const tableBody = document.querySelector("#detailTable tbody");
+      tableBody.innerHTML = "";
 
-        if (Array.isArray(data)) {
-          data.forEach(rowData => {
-            const row = tableBody.insertRow();
-            rowData.forEach((cellData, i) => {
-              const cell = row.insertCell();
-              const input = document.createElement("input");
+      if (Array.isArray(data)) {
+        data.forEach(rowData => {
+          const row = tableBody.insertRow();
+          rowData.forEach((cellData, i) => {
+            const cell = row.insertCell();
+            const input = document.createElement("input");
 
-              input.value = cellData;
-              input.type = (i === 6 || i === 10) ? "date" : "text";
-              if (i === 9) {
-                input.readOnly = true;
-                input.style.backgroundColor = "#f5f5f5";
-              }
+            input.value = cellData;
+            input.type = (i === 6 || i === 10) ? "date" : "text";
+            if (i === 9) {
+              input.readOnly = true;
+              input.style.backgroundColor = "#f5f5f5";
+            }
 
-              input.addEventListener("input", () => {
-                if (i === 6 || i === 10) {
-                  const rowInputs = row.querySelectorAll("input");
-                  const start = rowInputs[6].value;
-                  const end = rowInputs[10].value;
-                  rowInputs[9].value = calculateTotalDays(start, end);
-                }
-              });
-
-              cell.appendChild(input);
+            input.addEventListener("input", () => {
+              updateSummary();
+              updateTotalDays(row);
             });
-          });
-        }
-      });
-  }
 
+            cell.appendChild(input);
+          });
+        });
+      }
+
+      updateSummary(); // Gọi cập nhật bảng tổng hợp khi tải dữ liệu
+    })
+    .catch(error => {
+      console.error("❌ 加载数据失败:", error);
+    });
+}
  function loadTable() {
             const tbody = document.querySelector("#detailTable tbody");
             tbody.innerHTML = ''; // Clear existing rows
