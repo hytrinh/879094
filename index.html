@@ -248,6 +248,8 @@
 }
 
 function saveData() {
+  console.log("Can Edit:", canEdit); // Kiểm tra giá trị của canEdit
+
   if (!canEdit) {
     alert("❌ 无编辑权限，无法保存！");
     sendWebhook(`${currentUser} 尝试保存但无权限`);
@@ -275,6 +277,8 @@ function saveData() {
     return;
   }
 
+  console.log("Dữ liệu gửi đi:", dataArray); // Kiểm tra dữ liệu gửi đi
+
   fetch(scriptURL, {
     method: "POST",
     body: JSON.stringify({ data: dataArray }),
@@ -282,6 +286,7 @@ function saveData() {
   })
   .then(res => res.json())
   .then(result => {
+    console.log("Kết quả từ server:", result); // Kiểm tra kết quả trả về từ server
     if (result.success) {
       alert("✅ 数据保存成功！");
     } else {
@@ -289,9 +294,10 @@ function saveData() {
     }
   })
   .catch(error => {
-  console.warn("连接服务器失败（暂未上传）", error);
-});
+    console.warn("连接服务器失败（暂未上传）", error);
+  });
 }
+
 function loadData() {
     fetch(scriptURL)
       .then(response => response.json())
